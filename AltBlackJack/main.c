@@ -99,7 +99,7 @@ typedef struct CardGameObj {
 
 ListMeta Pooling_List; //Listelement 를 위한 풀
 
-ListMeta* List_Create(InstanceTag valueType);
+ListMeta* Group_Create(InstanceTag valueType);
 
 /// <summary>
 /// source list에 자료를 추가합니다
@@ -119,7 +119,7 @@ int List_AddElement(ListMeta* meta, ListElement* element, InstanceTag type);
 /// <returns>파라미터에 넣은 element 그 자체가 나옵니다</returns>
 void List_Extract(ListMeta* meta, ListElement* element);
 
-ListElement* List_ExtractByIndex(ListMeta* meta, int index);
+ListElement* Group_ExcludeByIndex(ListMeta* meta, int index);
 
 /// <summary>
 /// 리스트 원소만 제거함, 내부 데이터의 객체는 유지함 (메모리 누수 주의)
@@ -257,10 +257,10 @@ int main() {
 	srand(time(NULL)); //시드 초기화
 
 	ListMeta* Deck;
-	Deck = List_Create(Card_class);
+	Deck = Group_Create(Card_class);
 
 	ListMeta* Sprites;
-	Sprites = List_Create(SpriteObj_class); // ! 스프라이트 객체를 제거했을 때, 일시적으로 안보이게 하고 싶을 때, 렌더링 리스트에서 제거 된건지 확인할 수가 없음
+	Sprites = Group_Create(SpriteObj_class); // ! 스프라이트 객체를 제거했을 때, 일시적으로 안보이게 하고 싶을 때, 렌더링 리스트에서 제거 된건지 확인할 수가 없음
 
 	//덱 세팅
 	for (int i = 1; i <= 13; i++) { //스페이드 13개 카드 덱에 세팅
@@ -279,7 +279,7 @@ int main() {
 	//카드 뽑기
 	for (int i = 0; i < 4; i++) {
 		//카드 한장 뽑아 손패에 저장하고, 리스트 제거
-		ListElement* temp = List_ExtractByIndex(Deck, rand() % Deck->count);
+		ListElement* temp = Group_ExcludeByIndex(Deck, rand() % Deck->count);
 		Hands[i].card = temp->data.card;
 		List_FreeElement(temp);
 
@@ -361,7 +361,7 @@ int main() {
 	return 0;
 }
 
-ListMeta* List_Create(InstanceTag valueType)
+ListMeta* Group_Create(InstanceTag valueType)
 {
 	ListMeta* meta;
 	meta = malloc(sizeof(ListMeta));
@@ -389,7 +389,7 @@ int List_AddNew(ListMeta* meta, Instance instance, InstanceTag type) {
 		if (element == NULL) printf("failed list element instantiate");
 	}
 	else {
-		element = List_ExtractByIndex(&Pooling_List, 0);
+		element = Group_ExcludeByIndex(&Pooling_List, 0);
 	}
 
 	element->data = instance;
@@ -439,7 +439,7 @@ void List_Extract(ListMeta* meta, ListElement* element) {
 	meta->count--;
 }
 
-ListElement* List_ExtractByIndex(ListMeta* meta, int index) {
+ListElement* Group_ExcludeByIndex(ListMeta* meta, int index) {
 
 	ListElement* element;
 	if (index == 0) {
