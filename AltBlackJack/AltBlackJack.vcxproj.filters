@@ -21,6 +21,9 @@
     <ClCompile Include="Grouplist.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="GameSys.c">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -46,6 +49,9 @@
       <Filter>리소스 파일</Filter>
     </Image>
     <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\Card_num_1.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\star_crumb.bmp">
       <Filter>리소스 파일</Filter>
     </Image>
   </ItemGroup>

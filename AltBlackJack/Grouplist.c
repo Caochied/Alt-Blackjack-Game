@@ -1,9 +1,49 @@
 #include <stdlib.h>
 #include "Grouplist.h"
 #include "GameSys.h"
+#include <stdio.h>
+
+#pragma region Static Func
+
+/// <summary>
+/// void*로 저장되어 있는 객체를 역참조해 내부 groupProperty를 반환함
+/// </summary>
+static GroupProperty* get_innerProp(void* element, InstanceTag type) {
+	switch (type) {
+	case Card_class:
+		return &((Card*)element)->groupProp;
+	case SpriteObj_class:
+		return &((SpriteObj*)element)->groupProp;
+	}
+
+	return NULL;
+}
+
+#pragma endregion
+
+void GroupProperty_Initialize(GroupProperty* prop) {
+	prop->affiliated = NULL;
+	prop->next = NULL;
+	prop->previous = NULL;
+}
+
+GroupMeta* Group_Create(InstanceTag valueType)
+{
+	GroupMeta* meta;
+	meta = malloc(sizeof(GroupMeta));
+	if (meta == NULL) { printf("failed list meta instantiate"); }
+
+	meta->valueType = valueType;
+	meta->front = NULL;
+	meta->rear = NULL;
+	meta->count = 0;
+
+	return meta;
+}
 
 int Group_Add(GroupMeta* group, void* element, InstanceTag type) {
-	if (group->valueType != type) return 0;
+	if (group->valueType != type) return 0; //자료형 불일치
+	if (get_innerProp(element, type)->affiliated != NULL) return 0; //이미 어떤 그룹에 소속됨
 
 	GroupProperty property = { group, NULL, NULL };
 
@@ -17,42 +57,39 @@ int Group_Add(GroupMeta* group, void* element, InstanceTag type) {
 	}
 	group->count++;
 
+	get_innerProp(group->rear, type)->affiliated = property.affiliated;
+	get_innerProp(group->rear, type)->next= property.next;
+	get_innerProp(group->rear, type)->previous = property.previous;
+
 	return 1;
 }
 
-/// <summary>
-/// void*로 저장되어 있는 객체를 역참조해 내부 groupProperty를 반환함
-/// </summary>
-static GroupProperty* get_innerProp(void* element, InstanceTag type) {
-	switch (type) {
-	case Card_class:
-		return &((Card*)element)->groupProp;
-	}
-}
+void Group_Exclude(GroupProperty* property) {
+	GroupMeta* group = property->affiliated;
 
-void Group_Exclude(GroupProperty* element) {
-	GroupMeta* group = element->affiliated;
+	if (property->affiliated == NULL) return; //소속 없음
 
 	if (group->count <= 1) { //리스트에 한개 밖에 없는 경우
 		group->front = NULL;
 		group->rear = NULL;
 	}
-	else if (element->previous == NULL) { //index 0, 맨 앞을 고른 경우
-		group->front = element->next;
-		get_innerProp(element->next, group->valueType)->previous = NULL;
+	else if (property->previous == NULL) { //index 0, 맨 앞을 고른 경우
+		group->front = property->next;
+		get_innerProp(property->next, group->valueType)->previous = NULL;
 	}
-	else if (element->next == NULL) { //마지막을 고른 경우
-		group->rear = element->previous;
-		get_innerProp(element->next, group->valueType)->next = NULL;
+	else if (property->next == NULL) { //마지막을 고른 경우
+		group->rear = property->previous;
+		get_innerProp(property->previous, group->valueType)->next = NULL;
 	}
 	else { //앞 뒤에 원소가 존재하는 경우
-		get_innerProp(element->previous, group->valueType)->next = element->next;
-		get_innerProp(element->next, group->valueType)->previous = element->previous;
+		get_innerProp(property->previous, group->valueType)->next = property->next;
+		get_innerProp(property->next, group->valueType)->previous = property->previous;
 	}
 
 	//모든 연결 해제
-	element->previous = NULL;
-	element->next = NULL;
+	property->affiliated = NULL;
+	property->previous = NULL;
+	property->next = NULL;
 	group->count--;
 }
 
@@ -67,7 +104,7 @@ void* Group_ExcludeByIndex(GroupMeta* group, int index) {
 		for (int i = 0; i < index; i++) ptr = get_innerProp(ptr, group->valueType)->next;
 	}
 
-	Group_Exclude(group, get_innerProp(ptr, group->valueType));
+	Group_Exclude(get_innerProp(ptr, group->valueType));
 
 	return ptr;
 }

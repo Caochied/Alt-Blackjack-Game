@@ -23,6 +23,8 @@ typedef struct GroupListMeta{
 	int count;
 } GroupMeta;
 
+void GroupProperty_Initialize(GroupProperty* prop);
+
 GroupMeta* Group_Create(InstanceTag valueType);
 
 /// <summary>
@@ -33,8 +35,9 @@ int Group_Add(GroupMeta* group, void* element, InstanceTag type);
 
 /// <summary>
 /// 객체를 group에서의 연결를 끊고 제외함
+/// 주의 :: GroupProperty는 객체가 아닙니다 - &GroupProp으로 주소값을 반드시 넣으시오
 /// </summary>
-void Group_Exclude(GroupMeta* group, GroupProperty* property);
+void Group_Exclude(GroupProperty* property);
 
 /// <summary>
 /// 그룹의 index번째 객체를 반환함

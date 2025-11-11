@@ -123,6 +123,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GameSys.c" />
     <ClCompile Include="Grouplist.c" />
     <ClCompile Include="main.c" />
   </ItemGroup>
@@ -138,6 +139,7 @@
     <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\Card.bmp" />
     <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\Card_num_0.bmp" />
     <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\Card_num_1.bmp" />
+    <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\star_crumb.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
