@@ -109,12 +109,7 @@ void* Group_ExcludeByIndex(GroupMeta* group, int index) {
 	return ptr;
 }
 
-void Group_FreeAll(GroupMeta* group) {
-	if (group->count <= 0) {
-		free(group);
-		return;
-	}
-
+void Group_ClearAll(GroupMeta* group) {
 	void* next;
 	void* temp;
 	temp = group->front;
@@ -122,11 +117,24 @@ void Group_FreeAll(GroupMeta* group) {
 		next = get_innerProp(temp, group->valueType)->next;
 
 		switch (group->valueType) {
+		case Card_class:
+			Card_Free((Card*)temp);
+		case SpriteObj_class:
+			SpriteObj_Free((SpriteObj*)temp);
 		default:
 			free(temp);
 		}
 
 		temp = next;
 	}
+
+	group->count = 0;
+	group->front = NULL;
+	group->rear = NULL;
+	//담는 자료형 유형은 보존됨
+}
+
+void Group_FreeAll(GroupMeta* group) {
+	Group_ClearAll(group);
 	free(group);
 }

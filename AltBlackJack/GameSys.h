@@ -1,7 +1,7 @@
 #pragma once
 #include "Grouplist.h"
 #include <windows.h>
-#define RENDERING_LAYERSIZE 3
+#define RENDERING_LAYERSIZE 2
 
 typedef enum {
 	Spade = 1,
@@ -65,30 +65,35 @@ typedef struct CardGameObj {
 	short Initialized; //스프라이트들 초기화 여부 반환
 } CardGameObj;
 
+//가장 마지막 index의 RenderLayer는 UI전용으로 가정합니다
+extern GroupMeta* RenderList[RENDERING_LAYERSIZE];
 
-GroupMeta* RenderList[RENDERING_LAYERSIZE];
+extern HDC hdc;
+extern HDC renderDC; //렌더링을 위한 버퍼
+extern HBITMAP renderBmp;
+extern HDC bmpDC; //비트맵 출력을 위한 임시 캔버스
 
-HDC hdc;
-HDC renderDC; //렌더링을 위한 버퍼
-HBITMAP renderBmp;
-HDC bmpDC; //비트맵 출력을 위한 임시 캔버스
-static HBITMAP old_bmp;
-static HBITMAP old_render;
+extern HBRUSH GameBG;
+extern bitResource Star_crumb;
+extern bitResource Card_BG;
+extern bitResource Card_Num[2]; //0 어두운 것, 1 밝은 것
 
-HBRUSH GameBG;
-bitResource Star_crumb;
-bitResource Card_BG;
-bitResource Card_Num[2]; //0 어두운 것, 1 밝은 것
+extern void(*Key_Z)(int); //(키 이벤트)
+extern void(*Key_X)(int); //(키 이벤트)
+extern void(*Key_Horizontal)(int, int); //(키 이벤트, 방향)
+extern void(*Key_Vertical)(int, int); //(키 이벤트, 방향)
 
 //스프라이트 확대 수준
-static int Scale = 4;
-static int offsetX = 8, offsetY = 32;
+extern int Scale;
+extern int offsetX, offsetY;
 
 /// <summary>
 /// 스프라이트 리소스와 HDC, 렌더링 LIST 같은 전역 변수를 초기화 합니다
 /// </summary>
 void Load_bitResource();
 void Unload_bitResource();
+
+void Input_KeyPress(); //windows.h 같은 외부 헤더와 겹치지 않기 위한 똥꼬쇼
 
 Card* Card_Instantiate(Suit suit, int value);
 

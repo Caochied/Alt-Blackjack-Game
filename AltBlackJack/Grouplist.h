@@ -45,6 +45,12 @@ void Group_Exclude(GroupProperty* property);
 void* Group_ExcludeByIndex(GroupMeta* group, int index);
 
 /// <summary>
-/// 그룹 원소들을 모두 제거, 메모리 해제함
+/// 내부 원소를 메모리 해제하고, 초기화 함
+/// </summary>
+void Group_ClearAll(GroupMeta* group);
+
+/// <summary>
+/// 그룹 원소들을 모두 제거 및 메모리 해제
+/// meta 도 메모리 해제함
 /// </summary>
 void Group_FreeAll(GroupMeta* group);

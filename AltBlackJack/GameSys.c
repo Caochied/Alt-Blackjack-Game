@@ -2,6 +2,29 @@
 #include "resource.h"
 #include <stdlib.h>
 
+GroupMeta* RenderList[RENDERING_LAYERSIZE];
+
+HDC hdc;
+HDC renderDC; //렌더링을 위한 버퍼
+HBITMAP renderBmp;
+HDC bmpDC; //비트맵 출력을 위한 임시 캔버스
+static HBITMAP old_bmp;
+static HBITMAP old_render;
+
+HBRUSH GameBG;
+bitResource Star_crumb;
+bitResource Card_BG;
+bitResource Card_Num[2]; //0 어두운 것, 1 밝은 것
+
+void(*Key_Z)(int) = NULL; //(키 이벤트)
+void(*Key_X)(int) = NULL; //(키 이벤트)
+void(*Key_Horizontal)(int, int) = NULL; //(키 이벤트, 방향)
+void(*Key_Vertical)(int, int) = NULL; //(키 이벤트, 방향)
+
+//스프라이트 확대 수준
+int Scale = 4;
+int offsetX = 8, offsetY = 32;
+
 void Load_bitResource()
 {
 	for (int i = 0; i < RENDERING_LAYERSIZE; i++) {
@@ -54,6 +77,102 @@ void Unload_bitResource()
 	DeleteObject(Card_Num[0].Hbitmap);
 	DeleteObject(Card_Num[1].Hbitmap);
 	DeleteObject(Card_BG.Hbitmap);
+}
+
+void Input_KeyPress()
+{
+	static int keyflags = 0; //onKeyDown 와 onKeyUp 구분하기 위한 플래그
+	// 최하위비트부터 순서대로
+	// -1 : Left
+	// -2 : Right
+	// -3 : Up
+	// -4 : Down
+	// -5 : Z, Confirm
+	// -6 : X, Cancel
+
+	if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
+		if (keyflags & 0x0001) {
+			if (Key_Horizontal != NULL) Key_Horizontal(0, -1);
+		}
+		else { //이전에 눌린적이 없으면, onKeyDown 호출
+			keyflags = keyflags | 0x0001;
+			if (Key_Horizontal != NULL) Key_Horizontal(1, -1);
+		}
+	}
+	else if (keyflags & 0x0001) { //이전에 눌린적이 있으면, onKeyUp 호출
+		keyflags = keyflags & ~0x0001;
+		if (Key_Horizontal != NULL) Key_Horizontal(-1, -1);
+	}
+
+	if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
+		if (keyflags & 0x0002) {
+			if (Key_Horizontal != NULL) Key_Horizontal(0, 1);
+		}
+		else {
+			keyflags = keyflags | 0x0002;
+			if (Key_Horizontal != NULL) Key_Horizontal(1, 1);
+		}
+	}
+	else if (keyflags & 0x0002) {
+		keyflags = keyflags & ~0x0002;
+		if (Key_Horizontal != NULL) Key_Horizontal(-1, 1);
+	}
+
+	if (GetAsyncKeyState(VK_UP) & 0x8000) {
+		if (keyflags & 0x0004) {
+			if (Key_Vertical != NULL) Key_Vertical(0, 1);
+		}
+		else {
+			keyflags = keyflags | 0x0004;
+			if (Key_Vertical != NULL) Key_Vertical(1, 1);
+		}
+	}
+	else if (keyflags & 0x0004) {
+		keyflags = keyflags & ~0x0004;
+		if (Key_Vertical != NULL) Key_Vertical(-1, 1);
+	}
+
+	if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
+		if (keyflags & 0x0008) {
+			if (Key_Vertical != NULL) Key_Vertical(0, -1);
+		}
+		else {
+			keyflags = keyflags | 0x0008;
+			if (Key_Vertical != NULL) Key_Vertical(1, -1);
+		}
+	}
+	else if (keyflags & 0x0008) {
+		keyflags = keyflags & ~0x0008;
+		if (Key_Vertical != NULL) Key_Vertical(-1, -1);
+	}
+
+	if (GetAsyncKeyState(0x5A) & 0x8000) { // ! Z key
+		if (keyflags & 0x0010) {
+			if (Key_Z != NULL) Key_Z(0);
+		}
+		else {
+			keyflags = keyflags | 0x0010;
+			if (Key_Z != NULL) Key_Z(1);
+		}
+	}
+	else if (keyflags & 0x0010) {
+		keyflags = keyflags & ~0x0010;
+		if (Key_Z != NULL) Key_Z(-1);
+	}
+
+	if (GetAsyncKeyState(0x59) & 0x8000) { // ! X key
+		if (keyflags & 0x0020) {
+			if (Key_X != NULL) Key_X(0);
+		}
+		else {
+			keyflags = keyflags | 0x0020;
+			if (Key_X != NULL) Key_X(1);
+		}
+	}
+	else if (keyflags & 0x0020) {
+		keyflags = keyflags & ~0x0020;
+		if (Key_X != NULL) Key_X(-1);
+	}
 }
 
 Card* Card_Instantiate(Suit suit, int value) {

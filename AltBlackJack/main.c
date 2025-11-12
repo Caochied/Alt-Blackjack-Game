@@ -17,6 +17,30 @@
 		-> 리스트에 보관되면 객체임
 */
 
+// ! 키 입력 체계 테스트 함수
+void MoveStar(int event, int direc) {
+	static SpriteObj* star = NULL;
+	if (star == NULL) {
+		star = SpriteObj_Instantiate(&Star_crumb, 0, 8, 8); // ! 렌더링 큐에 포함되면, 프로그램 종료시, 자동으로 메모리 해제됨
+		//애니메이터 생성해서 추가해주기
+
+		Group_Add(RenderList[1], star, SpriteObj_class);
+	}
+
+	if (event != 1) return; //KeyDown 에만 반응
+
+	star->sprite_index = (star->sprite_index + 1) % 2;
+
+	if (direc == 1) //Right
+	{
+		star->x += 10;
+	}
+	else if (direc == -1) //Left
+	{
+		star->x += -10;
+	}
+}
+
 int main() {
 	Load_bitResource();
 
@@ -60,11 +84,8 @@ int main() {
 
 	// TODO 테스트 코드 실행 제거
 	Card_StackUp(Hands[0].card, (Card*)Group_ExcludeByIndex(Deck, rand() % Deck->count));
-	SpriteObj* star; // 키 입력 반응속도 및 애니메이션 테스트
-	star = SpriteObj_Instantiate(&Star_crumb, 0, 8, 8);
-	Group_Add(RenderList[1], star, SpriteObj_class);
-
-	Sleep(500);
+	MoveStar(-1, 0); //별 스프라이트 선언 및 생성을 위한 첫 실행
+	Key_Horizontal = MoveStar; //좌우 방향키에 함수 추가
 
 	clock_t last_time, temp;
 	double deltaTime = 0; //실제 코드의 elasped clock
@@ -76,7 +97,8 @@ int main() {
 
 		if (frameTime > frameRate) { // ! 프레임별 연산
 			if (animTime >= animRate) {
-				star->sprite_index = (star->sprite_index + 1) % 2;
+				//star->sprite_index = (star->sprite_index + 1) % 2;
+				// TODO 여기에 스프라이트를 바꾸는 애니메이터 연산
 				animTime = 0;
 			}
 			else animTime++;
@@ -86,36 +108,26 @@ int main() {
 				CardGameObj_Update(&Hands[i]);
 			}
 
-			// 이 코드는 그래픽 루프에 포함하시오
 			RECT rc = { 0, 0, 960, 512};
 			FillRect(renderDC, &rc, GameBG);
 
 			SpriteObj* listLoop;
-			listLoop = (SpriteObj*)RenderList[0]->front; //레이어 0
-			while (listLoop != NULL) {
-				SpriteObj_Print(listLoop);
-				listLoop = (SpriteObj*)listLoop->groupProp.next;
-			}
-
-			listLoop = (SpriteObj*)RenderList[1]->front; //레이어 1
-			while (listLoop != NULL) {
-				SpriteObj_Print(listLoop);
-				listLoop = (SpriteObj*)listLoop->groupProp.next;
+			for (int i = 0; i < RENDERING_LAYERSIZE; i++) {
+				listLoop = (SpriteObj*)RenderList[i]->front;
+				while (listLoop != NULL) {
+					SpriteObj_Print(listLoop);
+					listLoop = (SpriteObj*)listLoop->groupProp.next;
+				}
 			}
 
 			//버퍼에 담긴 결과 출력
 			BitBlt(hdc, offsetX, offsetY, 960, 512, renderDC, 0, 0, SRCCOPY);
 
 			// ! 키입력 받기
-			if (GetAsyncKeyState(VK_LEFT) & 0x8000) { //OnKeyDown -> 처음 눌렀을 때만 반응
-				star->x -= 2;
-			}
-			if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
-				star->x += 2;
-			}
+			Input_KeyPress();
 
 			frameTime = 0; // ! 프레임 초기화
-			printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bdelta : %.5lf", deltaTime/CLOCKS_PER_SEC);
+			//printf("\b\b\b\b\b\b\b\b\b\b\b\bfps : %.2lf", CLOCKS_PER_SEC / deltaTime);
 		}
 
 		temp = clock();
