@@ -16,14 +16,22 @@ bitResource Star_crumb;
 bitResource Card_BG;
 bitResource Card_Num[2]; //0 어두운 것, 1 밝은 것
 
-void(*Key_Z)(int) = NULL; //(키 이벤트)
-void(*Key_X)(int) = NULL; //(키 이벤트)
-void(*Key_Horizontal)(int, int) = NULL; //(키 이벤트, 방향)
-void(*Key_Vertical)(int, int) = NULL; //(키 이벤트, 방향)
+void(*Key_Z)(int) = NULL;
+void(*Key_X)(int) = NULL;
+void(*Key_C)(int) = NULL;
+void(*Key_Horizontal)(int, int) = NULL;
+void(*Key_Vertical)(int, int) = NULL;
 
 //스프라이트 확대 수준
 int Scale = 4;
 int offsetX = 8, offsetY = 32;
+
+GameState SceneState = Game_Idle;
+
+GroupMeta* Deck;
+CardGameObj Hands[HANDS_MAX];
+int Pointing_Hand; //방향키로 포인팅된 카드
+int Picked_Pile = -1; //스택 기능을 사용할 때, 들어올려진 카드
 
 void Load_bitResource()
 {
@@ -160,7 +168,7 @@ void Input_KeyPress()
 		if (Key_Z != NULL) Key_Z(-1);
 	}
 
-	if (GetAsyncKeyState(0x59) & 0x8000) { // ! X key
+	if (GetAsyncKeyState(0x58) & 0x8000) { // ! X key
 		if (keyflags & 0x0020) {
 			if (Key_X != NULL) Key_X(0);
 		}
@@ -173,7 +181,181 @@ void Input_KeyPress()
 		keyflags = keyflags & ~0x0020;
 		if (Key_X != NULL) Key_X(-1);
 	}
+
+	if (GetAsyncKeyState(0x43) & 0x8000) { // ! C key
+		if (keyflags & 0x0040) {
+			if (Key_C != NULL) Key_C(0);
+		}
+		else {
+			keyflags = keyflags | 0x0040;
+			if (Key_C != NULL) Key_C(1);
+		}
+	}
+	else if (keyflags & 0x0040) {
+		keyflags = keyflags & ~0x0040;
+		if (Key_C != NULL) Key_C(-1);
+	}
 }
+
+#pragma region Scene State
+
+void StateGo_Idle()
+{
+	SceneState = Game_Idle;
+	Key_Z = StateTry_StackUp;
+	Key_X = InGame_General_Undo;
+	Key_Horizontal = SelectHands;
+	Key_Vertical = SelectAction;
+}
+
+void StateGo_StackUp()
+{
+	if (Pointing_Hand == -1) return;
+	if (Hands[Pointing_Hand].card == NULL) return;
+
+	SceneState = Game_StackUp;
+	Key_Z = Try_CardStack;
+	Key_X = InGame_General_Undo;
+	Key_Horizontal = SelectHands;
+	Key_Vertical = NULL; //TODO 여기에 카드 전체 펼치기 기능을 넣는건?
+
+	Picked_Pile = Pointing_Hand;
+	Hands[Picked_Pile].bg->y += 6;
+}
+
+// ! 상태 진입시, 변경한 사항 정리
+static void StateOut_StackUp()
+{
+	Hands[Picked_Pile].bg->y -= 6;
+	Picked_Pile = -1;
+}
+
+void StateGo_Draw() {
+	SceneState = Game_Draw;
+	Key_Z = Try_CardDraw;
+	Key_X = InGame_General_Undo;
+	Key_Horizontal = NULL;
+	Key_Vertical = SelectAction;
+}
+
+void StateGo_Stand() {
+
+}
+
+void Try_CardStack(int event) {
+	if (event != 1) return;
+
+	if (Pointing_Hand == -1) return;
+	if (Hands[Picked_Pile].card == NULL) return;
+	
+	if (Card_StackUp(Hands[Pointing_Hand].card, Hands[Picked_Pile].card)) {
+		Hands[Picked_Pile].card = NULL;
+		InGame_General_Undo(1);
+		return;
+	}
+	else {
+		//TODO 경고 피드백 띄우기
+	}
+}
+
+void Try_CardDraw(int event) {
+	if (event != 1) return;
+
+	int index = -1;
+	for (int i = 0; i < HANDS_MAX; i++) {
+		if (Hands[i].card == NULL) {
+			index = i;
+			break;
+		}
+	}
+
+	if (index == -1) {
+		//TODO 경고 피드백
+		return;
+	}
+	if (Deck->count <= 0) {
+		//TODO 경고 피드백
+		return;
+	}
+
+	Hands[index].card = (Card*)Group_ExcludeByIndex(Deck, rand() % Deck->count);
+}
+
+void SelectHands(int event, int direc) {
+	// TODO 이 영역은 테스트 코드 입니다
+	static SpriteObj* star = NULL;
+	if (star == NULL) {
+		star = SpriteObj_Instantiate(&Star_crumb, 0, 8, 8); // ! 렌더링 큐에 포함되면, 프로그램 종료시, 자동으로 메모리 해제됨
+		//애니메이터 생성해서 추가해주기
+	}
+	// TODO #############################
+
+	if (event != 1 || direc == 0) return; //오직 KeyDown에만 반응
+
+	for (int i = 0; i < HANDS_MAX; i++) { //direc 방향으로 선택 가능한 카드를 찾음 (중간에 빈 구조체가 있을 수 있으니까)
+		Pointing_Hand = (Pointing_Hand + direc + HANDS_MAX) % HANDS_MAX;
+		if (SceneState == Game_StackUp && Pointing_Hand == Picked_Pile) continue; //스택 기능을 사용중일 때, 자기 자신을 선택할 수는 없음
+		if (Hands[Pointing_Hand].card != NULL)
+		{
+			Group_Add(RenderList[1], star, SpriteObj_class);
+			star->x = Hands[Pointing_Hand].bg->x + 8;
+			star->y = Hands[Pointing_Hand].bg->y - 16;
+			return;
+		}
+	}
+
+	Pointing_Hand = -1;
+	Group_Exclude(&star->groupProp);
+
+}
+
+void StateTry_StackUp(int event)
+{
+	if (event != 1) return;
+	if (SceneState != Game_Idle) return;
+	StateGo_StackUp();
+}
+
+void SelectAction(int event, int direc) {
+	if (event != 1 || direc == 0) return;
+	if (SceneState == Game_Draw || SceneState == Game_Stand) {
+		InGame_General_Undo(1);
+		return;
+	}
+	if (SceneState != Game_Idle) return;
+
+	if (direc == 1) // ! Up
+	{
+		StateGo_Draw();
+		//게임 모드 변경 -> Draw
+	}
+	else if (direc == -1)
+	{
+		StateGo_Stand();
+		//게임 모드 변경 -> Stand
+	}
+}
+
+void InGame_General_Undo(int event) {
+	if (event != 1) return;
+
+	switch (SceneState) {
+	case Game_StackUp:
+		StateOut_StackUp();
+		StateGo_Idle();
+		break;
+	case Game_Draw:
+		StateGo_Idle();
+		break;
+	case Game_Stand:
+		StateGo_Idle();
+		break;
+	}
+}
+
+#pragma endregion
+
+#pragma region Game Variable
 
 Card* Card_Instantiate(Suit suit, int value) {
 	Card* card;
@@ -298,7 +480,14 @@ void CardGameObj_Initialize(CardGameObj* gameobj, int renderLayer, int x, int y)
 }
 void CardGameObj_Update(CardGameObj* gameobj)
 {
-	if (gameobj->card == NULL) return;
+	if (gameobj->card == NULL) { // ! 카드가 없으면, 렌더링 큐에서 스프라이트 제거
+		Group_Exclude(&gameobj->bg->groupProp);
+		Group_Exclude(&gameobj->rootCard_bg->groupProp);
+		return;
+	}
+	else {
+		Group_Add(gameobj->RenderLayer, gameobj->bg, SpriteObj_class);
+	}
 
 	Card* upper = Card_getUpper(gameobj->card);
 	if (upper != gameobj->card) { //스택이 된 카드들이라면, 가장 밑에 깔린 카드를 표현
@@ -349,3 +538,5 @@ void CardGameObj_Free(CardGameObj* gameobj)
 	// ! gameobj->num, gameobj->rootCard_num
 	// ! 함수에 의해 자동으로 메모리 해제
 }
+
+#pragma endregion

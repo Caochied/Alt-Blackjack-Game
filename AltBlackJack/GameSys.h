@@ -2,6 +2,7 @@
 #include "Grouplist.h"
 #include <windows.h>
 #define RENDERING_LAYERSIZE 2
+#define HANDS_MAX 4
 
 typedef enum {
 	Spade = 1,
@@ -65,6 +66,7 @@ typedef struct CardGameObj {
 	short Initialized; //스프라이트들 초기화 여부 반환
 } CardGameObj;
 
+#pragma region GameEngineVar
 //가장 마지막 index의 RenderLayer는 UI전용으로 가정합니다
 extern GroupMeta* RenderList[RENDERING_LAYERSIZE];
 
@@ -80,12 +82,33 @@ extern bitResource Card_Num[2]; //0 어두운 것, 1 밝은 것
 
 extern void(*Key_Z)(int); //(키 이벤트)
 extern void(*Key_X)(int); //(키 이벤트)
+extern void(*Key_C)(int); //(키 이벤트)
 extern void(*Key_Horizontal)(int, int); //(키 이벤트, 방향)
 extern void(*Key_Vertical)(int, int); //(키 이벤트, 방향)
 
 //스프라이트 확대 수준
 extern int Scale;
 extern int offsetX, offsetY;
+#pragma endregion
+
+#pragma region CardGameVar
+typedef enum {
+	Game_Logo = 1,
+	Game_Idle = 201, //인게임 기본 상태
+	Game_StackUp, // 카드를 들어올린 상태
+	Game_Draw, // 방향키 위를 눌러, 카드를 뽑을지 선택하는 상태
+	Game_Stand, // 방향키 아래를 눌러, 턴을 넘길지 선택하는 상태
+	Game_Wait // 연출을 위해, 입력을 제한하는 상태
+} GameState;
+
+extern GameState SceneState;
+
+extern GroupMeta* Deck;
+extern CardGameObj Hands[HANDS_MAX];
+extern int Pointing_Hand;
+extern int Picked_Pile;
+#pragma endregion
+
 
 /// <summary>
 /// 스프라이트 리소스와 HDC, 렌더링 LIST 같은 전역 변수를 초기화 합니다
@@ -94,6 +117,48 @@ void Load_bitResource();
 void Unload_bitResource();
 
 void Input_KeyPress(); //windows.h 같은 외부 헤더와 겹치지 않기 위한 똥꼬쇼
+
+//TODO 인게임의 상태 변경 함수들이 진정으로 외부에 노출될 필요가 있나?? 나중에 Static으로 바꾸자
+//TODO 메인메뉴 - 인게임 같은 씬 변경정도는 되어야 외부 노출을 해야지!!
+//TOdO 아 시발 함수 선언 순서에 따라 정의 없음 에러가 뜨니까 지금까지 이렇게 적었던거구나
+/// <summary>
+/// 게임 상황을 Idle 상태로 바꿉니다
+/// </summary>
+void StateGo_Idle();
+
+void StateGo_StackUp();
+
+void StateGo_Draw();
+
+void StateGo_Stand();
+
+void Try_CardStack(int event);
+
+void Try_CardDraw(int event);
+
+/// <summary>
+/// 게임 Idle, StackUp 중에 손패를 좌우 방향키로 선택할 수 있도록 함
+/// </summary>
+/// <param name="event">key input event</param>
+/// <param name="direc">key direction -1 or 1</param>
+void SelectHands(int event, int direc);
+
+/// <summary>
+/// 선택된 손패에 대해 StackUp 상태 전환을 시도함
+/// </summary>
+void StateTry_StackUp(int event);
+
+/// <summary>
+/// Idle 상태에서 상하 방향키로, Draw, Stand 상태로 바꿀 수 있도록 함
+/// </summary>
+/// <param name="event">key input event</param>
+/// <param name="direc">key direction -1 or 1</param>
+void SelectAction(int event, int direc);
+
+/// <summary>
+/// 인게임에서 뒤로가기 기능을 이행함
+/// </summary>
+void InGame_General_Undo(int event);
 
 Card* Card_Instantiate(Suit suit, int value);
 

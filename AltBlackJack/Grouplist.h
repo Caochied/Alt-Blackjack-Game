@@ -30,7 +30,7 @@ GroupMeta* Group_Create(InstanceTag valueType);
 /// <summary>
 /// 반드시, grouplist.h에서 지원하는 구조체만 element로 넣어야 함
 /// </summary>
-/// <returns>리스트가 담는 자료형과 일치하지 않으면 0을 반환</returns>
+/// <returns>자료형과 불일치, 또는 이미 소속이 있으면, 0을 반환</returns>
 int Group_Add(GroupMeta* group, void* element, InstanceTag type);
 
 /// <summary>
@@ -41,6 +41,7 @@ void Group_Exclude(GroupProperty* property);
 
 /// <summary>
 /// 그룹의 index번째 객체를 반환함
+/// 주의 :: NULL에 대한 예외 처리 없음
 /// </summary>
 void* Group_ExcludeByIndex(GroupMeta* group, int index);
 

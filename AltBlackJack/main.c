@@ -54,12 +54,10 @@ int main() {
 
 	srand(time(NULL)); //시드 초기화
 
-	CardGameObj Hands[4];
 	for (int i = 0; i < 4; i++) { //구조체 초기화 작업
-		CardGameObj_Initialize(&Hands[i], 0, i * (Card_BG.width + 2), 32);
+		CardGameObj_Initialize(&Hands[i], 0, 42 + i * (Card_BG.width + 4), 91);
 	}
 
-	GroupMeta* Deck;
 	Deck = Group_Create(Card_class);
 
 	//덱 세팅
@@ -73,7 +71,7 @@ int main() {
 	}
 
 	//카드 뽑기
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 2; i++) {
 		//카드 한장 뽑아 손패에 저장하고, 리스트 제거
 
 		if (i == 0) {
@@ -84,8 +82,9 @@ int main() {
 
 	// TODO 테스트 코드 실행 제거
 	Card_StackUp(Hands[0].card, (Card*)Group_ExcludeByIndex(Deck, rand() % Deck->count));
-	MoveStar(-1, 0); //별 스프라이트 선언 및 생성을 위한 첫 실행
-	Key_Horizontal = MoveStar; //좌우 방향키에 함수 추가
+	SelectHands(-1, 0); //별 스프라이트 선언 및 생성을 위한 첫 실행
+	
+	StateGo_Idle(); //플레이어 조작 가능
 
 	clock_t last_time, temp;
 	double deltaTime = 0; //실제 코드의 elasped clock
