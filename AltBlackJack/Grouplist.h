@@ -1,7 +1,8 @@
 #pragma once
 typedef enum {
 	Card_class,
-	SpriteObj_class
+	SpriteObj_class,
+	FontTextObj_class
 } InstanceTag;
 
 //°´Ã¼

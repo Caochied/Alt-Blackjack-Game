@@ -1,8 +1,13 @@
 #pragma once
 #include "Grouplist.h"
 #include <windows.h>
-#define RENDERING_LAYERSIZE 2
+
+#define SPRITE_RENDERING_LAYERSIZE 3
+#define FONT_TEXT_MAX_STR_LEN 128
+
+
 #define HANDS_MAX 4
+#define BURST_DMG 5
 
 typedef enum {
 	Spade = 1,
@@ -45,6 +50,17 @@ typedef struct SpriteObject {
 	GroupProperty groupProp;
 } SpriteObj;
 
+typedef struct FontTextObject {
+	char content[FONT_TEXT_MAX_STR_LEN];
+
+	int x; int y;
+	int align; //TA_Center, Left, Right 같은 문자 정렬 스타일
+	int color;
+	int sizeScale;
+
+	GroupProperty groupProp;
+} FontTextObj;
+
 /// <summary>
 /// 카드가 뽑혔을 때, 스프라이트와 카드 객체를 실체로서 다루기 위한 오브젝트
 /// 일단은 객체가 아니라 구조체로 관리해봄.
@@ -68,7 +84,8 @@ typedef struct CardGameObj {
 
 #pragma region GameEngineVar
 //가장 마지막 index의 RenderLayer는 UI전용으로 가정합니다
-extern GroupMeta* RenderList[RENDERING_LAYERSIZE];
+extern GroupMeta* RenderList_Sprite[SPRITE_RENDERING_LAYERSIZE];
+extern GroupMeta* RenderList_Text;
 
 extern HDC hdc;
 extern HDC renderDC; //렌더링을 위한 버퍼
@@ -136,6 +153,8 @@ void Try_CardStack(int event);
 
 void Try_CardDraw(int event);
 
+void ConfirmTurnEnd(int event);
+
 /// <summary>
 /// 게임 Idle, StackUp 중에 손패를 좌우 방향키로 선택할 수 있도록 함
 /// </summary>
@@ -156,9 +175,31 @@ void StateTry_StackUp(int event);
 void SelectAction(int event, int direc);
 
 /// <summary>
+/// STAND 상태에 들어갔을때, FLEE를 사용할지, 그대로 턴을 넘길지 고름
+/// </summary>
+void SelectTurnEnd(int event, int direc);
+
+/// <summary>
 /// 인게임에서 뒤로가기 기능을 이행함
 /// </summary>
 void InGame_General_Undo(int event);
+
+/// <summary>
+/// 현재 손패의 점수를 계산함
+/// </summary>
+/// <param name="aceIsOne">0이 아니라면, Ace를 1점으로 계산함</param>
+int Hands_GetScore(int aceIsOne);
+
+/// <summary>
+/// 버스트 판정을 피할 수 없는지 확인함
+/// </summary>
+int Hands_isBursted();
+
+/// <summary>
+/// 현재 손패로 받을 최소 데미지를 계산함
+/// </summary>
+/// <param name="NeverBurst">0이 아니라면, 피해를 감수해서라도 버스트를 무조건 피한다는 가정하에 피해를 계산합니다</param>
+int Hands_GetDMG();
 
 Card* Card_Instantiate(Suit suit, int value);
 
@@ -189,6 +230,18 @@ void SpriteObj_Free(SpriteObj* sprite);
 /// 스프라이트와 자녀 객체의 정보까지 한번에 출력함
 /// </summary>
 void SpriteObj_Print(SpriteObj* sprite);
+
+/// <summary>
+/// 폰트를 사용하여 문자를 출력하는 오브젝트를 생성함
+/// </summary>
+/// <param name="content">문자열</param>
+/// <param name="_align">문자 정렬 스타일</param>
+/// <param name="_color">팔레트 색상 번호</param>
+/// <param name="_size">문자 크기 배율</param>
+/// <returns></returns>
+FontTextObj* FontTextObj_Instantiate(char* _content, int _x, int _y, int _align, int _color, int _size);
+
+void FontTextObj_Print(FontTextObj* text);
 
 /// <summary>
 /// 스프라이트를 할당하고, 초기화 함

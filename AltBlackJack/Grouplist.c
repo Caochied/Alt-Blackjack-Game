@@ -14,6 +14,8 @@ static GroupProperty* get_innerProp(void* element, InstanceTag type) {
 		return &((Card*)element)->groupProp;
 	case SpriteObj_class:
 		return &((SpriteObj*)element)->groupProp;
+	case FontTextObj_class:
+		return &((FontTextObj*)element)->groupProp;
 	}
 
 	return NULL;

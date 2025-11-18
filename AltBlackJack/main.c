@@ -24,7 +24,7 @@ void MoveStar(int event, int direc) {
 		star = SpriteObj_Instantiate(&Star_crumb, 0, 8, 8); // ! 렌더링 큐에 포함되면, 프로그램 종료시, 자동으로 메모리 해제됨
 		//애니메이터 생성해서 추가해주기
 
-		Group_Add(RenderList[1], star, SpriteObj_class);
+		Group_Add(RenderList_Sprite[1], star, SpriteObj_class);
 	}
 
 	if (event != 1) return; //KeyDown 에만 반응
@@ -81,6 +81,9 @@ int main() {
 	}
 
 	// TODO 테스트 코드 실행 제거
+	FontTextObj* Testtxt = FontTextObj_Instantiate("Ima electric guitar", 20, 280, TA_LEFT, 0, 1);
+	Group_Add(RenderList_Text, Testtxt, FontTextObj_class);
+
 	Card_StackUp(Hands[0].card, (Card*)Group_ExcludeByIndex(Deck, rand() % Deck->count));
 	SelectHands(-1, 0); //별 스프라이트 선언 및 생성을 위한 첫 실행
 	
@@ -111,12 +114,19 @@ int main() {
 			FillRect(renderDC, &rc, GameBG);
 
 			SpriteObj* listLoop;
-			for (int i = 0; i < RENDERING_LAYERSIZE; i++) {
-				listLoop = (SpriteObj*)RenderList[i]->front;
+			for (int i = 0; i < SPRITE_RENDERING_LAYERSIZE; i++) {
+				listLoop = (SpriteObj*)RenderList_Sprite[i]->front;
 				while (listLoop != NULL) {
 					SpriteObj_Print(listLoop);
 					listLoop = (SpriteObj*)listLoop->groupProp.next;
 				}
+			}
+
+			FontTextObj* listLoop_t;
+			listLoop_t = RenderList_Text->front;
+			while (listLoop_t != NULL) {
+				FontTextObj_Print(listLoop_t);
+				listLoop_t = (FontTextObj*)listLoop_t->groupProp.next;
 			}
 
 			//버퍼에 담긴 결과 출력

@@ -42,17 +42,33 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\Card.bmp">
+    <Image Include="Sprite Source\Dali.bmp">
       <Filter>리소스 파일</Filter>
     </Image>
-    <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\Card_num_0.bmp">
+    <Image Include="Sprite Source\Lisette.bmp">
       <Filter>리소스 파일</Filter>
     </Image>
-    <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\Card_num_1.bmp">
+    <Image Include="Sprite Source\Card.bmp">
       <Filter>리소스 파일</Filter>
     </Image>
-    <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\star_crumb.bmp">
+    <Image Include="Sprite Source\Card_num_0.bmp">
       <Filter>리소스 파일</Filter>
     </Image>
+    <Image Include="Sprite Source\Card_num_1.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="Sprite Source\star_crumb.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="lanapixel_everything\LanaPixel.ttf">
+      <Filter>리소스 파일</Filter>
+    </Resource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="lanapixel_everything\font1.bin">
+      <Filter>리소스 파일</Filter>
+    </None>
   </ItemGroup>
 </Project>

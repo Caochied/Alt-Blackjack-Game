@@ -136,10 +136,20 @@
     <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\Card.bmp" />
-    <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\Card_num_0.bmp" />
-    <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\Card_num_1.bmp" />
-    <Image Include="..\..\..\..\Desktop\간간히 만지는거\BlackJack Source\star_crumb.bmp" />
+    <Image Include="Sprite Source\Card.bmp" />
+    <Image Include="Sprite Source\Card_num_0.bmp" />
+    <Image Include="Sprite Source\Card_num_1.bmp" />
+    <Image Include="Sprite Source\Dali.bmp" />
+    <Image Include="Sprite Source\Lisette.bmp" />
+    <Image Include="Sprite Source\star_crumb.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="lanapixel_everything\LanaPixel.ttf">
+      <FileType>Document</FileType>
+    </Resource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="lanapixel_everything\font1.bin" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

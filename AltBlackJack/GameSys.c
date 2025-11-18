@@ -1,15 +1,22 @@
 #include "GameSys.h"
 #include "resource.h"
 #include <stdlib.h>
+#include <string.h>
 
-GroupMeta* RenderList[RENDERING_LAYERSIZE];
+GroupMeta* RenderList_Sprite[SPRITE_RENDERING_LAYERSIZE];
+GroupMeta* RenderList_Text;
 
 HDC hdc;
 HDC renderDC; //렌더링을 위한 버퍼
 HBITMAP renderBmp;
+HFONT renderFont;
+HANDLE renderFontRes; //폰트를 시스템에 일시 등록하기 위해 사용한 핸들
+
 HDC bmpDC; //비트맵 출력을 위한 임시 캔버스
+
 static HBITMAP old_bmp;
 static HBITMAP old_render;
+static HFONT old_font;
 
 HBRUSH GameBG;
 bitResource Star_crumb;
@@ -32,17 +39,37 @@ GroupMeta* Deck;
 CardGameObj Hands[HANDS_MAX];
 int Pointing_Hand; //방향키로 포인팅된 카드
 int Picked_Pile = -1; //스택 기능을 사용할 때, 들어올려진 카드
+static int Selected_Option; //선택지 지정 상황에서 사용되는 변수
 
 void Load_bitResource()
 {
-	for (int i = 0; i < RENDERING_LAYERSIZE; i++) {
-		RenderList[i] = Group_Create(SpriteObj_class);
+	for (int i = 0; i < SPRITE_RENDERING_LAYERSIZE; i++) {
+		RenderList_Sprite[i] = Group_Create(SpriteObj_class);
 	}
+	RenderList_Text = Group_Create(FontTextObj_class);
 
 	hdc = GetWindowDC(GetForegroundWindow()); // Handle to Device Context
 	renderDC = CreateCompatibleDC(hdc);
 	renderBmp = CreateCompatibleBitmap(hdc, 960, 512);
 	bmpDC = CreateCompatibleDC(hdc);
+
+	// 폰트 설정 코드는 이해를 못하겠습니다 ㅎㅎ;;
+	// ! 리소스에서 폰트 로드
+	HINSTANCE hInst = (HINSTANCE)GetWindowLongPtr(GetForegroundWindow(), GWLP_HINSTANCE);
+	HRSRC hRes = FindResource(hInst, MAKEINTRESOURCE(IDR_FONT1), RT_FONT);
+	HGLOBAL hFontData = LoadResource(hInst, hRes);
+	void* pFontData = LockResource(hFontData);
+	DWORD fontSize = SizeofResource(hInst, hRes);
+
+	// ! OS에 임시로 폰트 등록
+	DWORD nFonts;
+	renderFontRes = AddFontMemResourceEx(pFontData, fontSize, NULL, &nFonts);
+
+	// ! Font 변수 생성
+	LOGFONT lf = { 0 };
+	lf.lfHeight = 18; //폰트 크기
+	lstrcpy(lf.lfFaceName, TEXT("MyFontName")); // 리소스 폰트 이름
+	HFONT hFont = CreateFontIndirect(&lf);
 
 	GameBG = CreateSolidBrush(RGB(42, 23, 59));
 
@@ -65,20 +92,26 @@ void Load_bitResource()
 
 	old_bmp = (HBITMAP)SelectObject(bmpDC, Card_BG.Hbitmap); //기존 변수 저장
 	old_render = (HBITMAP)SelectObject(renderDC, renderBmp);
+	old_font = (HFONT)SelectObject(renderDC, hFont);
 }
 
 void Unload_bitResource()
 {
-	for (int i = 0; i < RENDERING_LAYERSIZE; i++) {
-		Group_FreeAll(RenderList[i]);
+	for (int i = 0; i < SPRITE_RENDERING_LAYERSIZE; i++) {
+		Group_FreeAll(RenderList_Sprite[i]);
 	}
 
-	SelectObject(bmpDC, old_bmp); //기존 변수 복구
-	SelectObject(renderDC, old_render); //기존 변수 복구
+	//기존 변수 복구
+	SelectObject(bmpDC, old_bmp);
+	SelectObject(renderDC, old_render); 
+	SelectObject(renderDC, old_font);
+
 	ReleaseDC(GetForegroundWindow(), hdc);
 	DeleteObject(renderBmp);
 	DeleteDC(renderDC);
 	DeleteDC(bmpDC);
+	DeleteObject(renderFont);
+	RemoveFontMemResourceEx(renderFontRes); //폰트 핸들 제거
 
 	DeleteObject(GameBG);
 	DeleteObject(Star_crumb.Hbitmap);
@@ -239,7 +272,33 @@ void StateGo_Draw() {
 }
 
 void StateGo_Stand() {
+	SceneState = Game_Stand;
+	Key_Z = NULL; //TODO stand, flee 실제 기능 함수 추가
+	Key_X = InGame_General_Undo;
+	Key_Horizontal = ConfirmTurnEnd;
+	Key_Vertical = SelectTurnEnd;
 
+	Selected_Option = 0;
+	SelectTurnEnd(1, 0); //선택지 시각 효과 초기화
+}
+
+void ConfirmTurnEnd(int event) {
+	if (event != -1) return; //KeyUp에 반응
+	if (Selected_Option >= 2) return;
+
+	switch (Selected_Option) {
+	case 0: //STAND
+		break;
+	case 1: //FLEE
+		break;
+	}
+}
+
+void SelectTurnEnd(int event, int direc) {
+	if (event != 1) return;
+
+	Selected_Option = (Selected_Option + 2 + direc) % 2;
+	//여기에 선택지 시각적 효과 보이기
 }
 
 void Try_CardStack(int event) {
@@ -290,14 +349,14 @@ void SelectHands(int event, int direc) {
 	}
 	// TODO #############################
 
-	if (event != 1 || direc == 0) return; //오직 KeyDown에만 반응
+	if (event != 1) return; //오직 KeyDown에만 반응
 
 	for (int i = 0; i < HANDS_MAX; i++) { //direc 방향으로 선택 가능한 카드를 찾음 (중간에 빈 구조체가 있을 수 있으니까)
 		Pointing_Hand = (Pointing_Hand + direc + HANDS_MAX) % HANDS_MAX;
 		if (SceneState == Game_StackUp && Pointing_Hand == Picked_Pile) continue; //스택 기능을 사용중일 때, 자기 자신을 선택할 수는 없음
 		if (Hands[Pointing_Hand].card != NULL)
 		{
-			Group_Add(RenderList[1], star, SpriteObj_class);
+			Group_Add(RenderList_Sprite[1], star, SpriteObj_class);
 			star->x = Hands[Pointing_Hand].bg->x + 8;
 			star->y = Hands[Pointing_Hand].bg->y - 16;
 			return;
@@ -350,6 +409,45 @@ void InGame_General_Undo(int event) {
 	case Game_Stand:
 		StateGo_Idle();
 		break;
+	}
+}
+#pragma endregion
+
+#pragma region Game Score
+
+int Hands_GetScore(int aceIsOne) {
+	int sum = 0;
+	Card* temp;
+	for (int i = 0; i < HANDS_MAX; i++) {
+		if (Hands[i].card == NULL) continue;
+		temp = Card_getUpper(Hands[i].card);
+		if (temp->value == 1 && aceIsOne != 0) {
+			sum += 11;
+		}
+		else sum += temp->value;
+	}
+
+	return sum;
+}
+
+int Hands_isBursted() {
+	int min = Hands_GetScore(0);
+	if (min > Hands_GetScore(1)) min = Hands_GetScore(1);
+
+	if (min > 21) return 1;
+	else return 0;
+}
+
+int Hands_GetDMG() {
+	int min = Hands_GetScore(0);
+	if (min > Hands_GetScore(1)) min = Hands_GetScore(1);
+
+	min -= 21;
+
+	if (min >= 0) return min;
+	else //버스트를 피할 수 없는 경우
+	{
+		return -min + BURST_DMG;
 	}
 }
 
@@ -454,12 +552,33 @@ void SpriteObj_Print(SpriteObj* tempS) {
 		preX = 0; preY = 0;
 	}
 }
+
+FontTextObj* FontTextObj_Instantiate(char* _content, int _x, int _y, int _align, int _color, int _size) {
+	FontTextObj* fontT;
+	fontT = malloc(sizeof(FontTextObj));
+	if (fontT == NULL) return NULL; //printf("failed FontTextObj instantiate");
+
+	strcpy_s(fontT->content, FONT_TEXT_MAX_STR_LEN, _content);
+	fontT->x = _x; fontT->y = _y;
+	fontT->align = _align;
+	fontT->color = _color;
+	fontT->sizeScale = _size;
+}
+
+void FontTextObj_Print(FontTextObj* text) {
+	SetTextAlign(renderDC, text->align);
+	SetBkColor(renderDC, TRANSPARENT);
+	SetTextColor(renderDC, RGB(255, 255, 255)); //TODO 나중에 색상 변수대로 처리 추가
+
+	TextOut(renderDC, text->x, text->y, text->content, strlen(text->content));
+}
+
 void CardGameObj_Initialize(CardGameObj* gameobj, int renderLayer, int x, int y)
 {
 	if (gameobj->Initialized == 1) return;
 
 	gameobj->Initialized = 1;
-	gameobj->RenderLayer = RenderList[renderLayer];
+	gameobj->RenderLayer = RenderList_Sprite[renderLayer];
 
 	gameobj->card = NULL;
 
