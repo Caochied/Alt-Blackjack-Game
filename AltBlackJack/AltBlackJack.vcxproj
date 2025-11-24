@@ -123,11 +123,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="gameScheduler.c" />
     <ClCompile Include="GameSys.c" />
     <ClCompile Include="Grouplist.c" />
     <ClCompile Include="main.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="gameScheduler.h" />
     <ClInclude Include="Grouplist.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="GameSys.h" />
@@ -136,20 +138,16 @@
     <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="aseprite_fonts\adapted_aseprite_font_black.bmp" />
+    <Image Include="aseprite_fonts\adapted_aseprite_font_white.bmp" />
     <Image Include="Sprite Source\Card.bmp" />
     <Image Include="Sprite Source\Card_num_0.bmp" />
     <Image Include="Sprite Source\Card_num_1.bmp" />
+    <Image Include="Sprite Source\Card_Pointer.bmp" />
     <Image Include="Sprite Source\Dali.bmp" />
     <Image Include="Sprite Source\Lisette.bmp" />
     <Image Include="Sprite Source\star_crumb.bmp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="lanapixel_everything\LanaPixel.ttf">
-      <FileType>Document</FileType>
-    </Resource>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="lanapixel_everything\font1.bin" />
+    <Image Include="Sprite Source\TipBox.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

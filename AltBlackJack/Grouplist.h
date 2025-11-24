@@ -2,7 +2,9 @@
 typedef enum {
 	Card_class,
 	SpriteObj_class,
-	FontTextObj_class
+	SpTextObj_class,
+	IntAnim_class,
+	SpriteAnim_class
 } InstanceTag;
 
 //°´Ã¼

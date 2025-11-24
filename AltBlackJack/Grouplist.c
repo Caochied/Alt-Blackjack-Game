@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "Grouplist.h"
 #include "GameSys.h"
+#include "gameScheduler.h"
 #include <stdio.h>
 
 #pragma region Static Func
@@ -14,8 +15,12 @@ static GroupProperty* get_innerProp(void* element, InstanceTag type) {
 		return &((Card*)element)->groupProp;
 	case SpriteObj_class:
 		return &((SpriteObj*)element)->groupProp;
-	case FontTextObj_class:
-		return &((FontTextObj*)element)->groupProp;
+	case SpTextObj_class:
+		return &((SpTextObj*)element)->groupProp;
+	case IntAnim_class:
+		return &((IntAnim*)element)->groupProp;
+	case SpriteAnim_class:
+		return &((SpriteAnim*)element)->groupProp;
 	}
 
 	return NULL;
@@ -123,6 +128,8 @@ void Group_ClearAll(GroupMeta* group) {
 			Card_Free((Card*)temp);
 		case SpriteObj_class:
 			SpriteObj_Free((SpriteObj*)temp);
+		case SpTextObj_class:
+			SpTextObj_Free((SpTextObj*)temp);
 		default:
 			free(temp);
 		}

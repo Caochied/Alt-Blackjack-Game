@@ -24,6 +24,9 @@
     <ClCompile Include="GameSys.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="gameScheduler.c">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -33,6 +36,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="GameSys.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="gameScheduler.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -60,15 +66,17 @@
     <Image Include="Sprite Source\star_crumb.bmp">
       <Filter>리소스 파일</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="lanapixel_everything\LanaPixel.ttf">
+    <Image Include="aseprite_fonts\adapted_aseprite_font_white.bmp">
       <Filter>리소스 파일</Filter>
-    </Resource>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="lanapixel_everything\font1.bin">
+    </Image>
+    <Image Include="Sprite Source\Card_Pointer.bmp">
       <Filter>리소스 파일</Filter>
-    </None>
+    </Image>
+    <Image Include="aseprite_fonts\adapted_aseprite_font_black.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="Sprite Source\TipBox.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
   </ItemGroup>
 </Project>

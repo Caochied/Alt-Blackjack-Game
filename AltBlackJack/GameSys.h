@@ -1,10 +1,11 @@
 #pragma once
 #include "Grouplist.h"
 #include <windows.h>
+#include <time.h>
 
 #define SPRITE_RENDERING_LAYERSIZE 3
-#define FONT_TEXT_MAX_STR_LEN 128
-
+#define SP_FONT_COUNT 95
+#define SP_FONT_LINEHEIGHT 9
 
 #define HANDS_MAX 4
 #define BURST_DMG 5
@@ -33,7 +34,8 @@ typedef struct {
 	BITMAP bmp; // 초기화 방법 -> GetObject(Hbitmap, sizeof(BITMAP), &bmp);
 
 	int spriteCount; //이 이미지에 담긴 스프라이트 갯수
-
+	
+	int row; //행 갯수
 	//스프라이트 1개당 이미지 크기
 	int width;
 	int height;
@@ -44,22 +46,38 @@ typedef struct SpriteObject {
 	bitResource* resource;
 	int sprite_index; //사용할 스프라이트 번호
 	int x; int y; //화면 상 위치, 자식 객체인 경우, 부모 객체의 위치에서 상대적인 좌표로 계산함
+	// TODO 로드된 비트맵에서 DIB section을 따로 생성해줘야 palette swap이 가능하다 - 안만들거임 ㅅㅂ
+	int palette_offset; //색상 밝기 조절 (어둡게- ~ 밝게+)
 
 	struct SpriteObject* children; //이 스프라이트에 종속된 추가적인 스프라이트
 
 	GroupProperty groupProp;
 } SpriteObj;
 
-typedef struct FontTextObject {
-	char content[FONT_TEXT_MAX_STR_LEN];
+typedef enum {
+	SpText_UpperLeft,
+	SpText_UpperMiddle,
+	SpText_UpperRight,
+	SpText_LowerLeft,
+	SpText_LowerMiddle,
+	SpText_LowerRight
+} SpTextAlign;
 
-	int x; int y;
-	int align; //TA_Center, Left, Right 같은 문자 정렬 스타일
+typedef struct SpTextObject {
+	SpriteObj* textline;
 	int color;
-	int sizeScale;
+	int x; int y; //현재 스케일 단위 상의, 좌표값을 의미함
+	SpTextAlign alignStyle;
+	int textScale;
+
+	// 고유의 크기로 생성된 글자들이, 현재 렌더링 스케일 단위에서 몇 픽셀 크기인지 나타냄
+	// ! 따로 수정하지 말것
+	int TextWidth;
+	// ! 따로 수정하지 말것
+	int TextHeight;
 
 	GroupProperty groupProp;
-} FontTextObj;
+} SpTextObj;
 
 /// <summary>
 /// 카드가 뽑혔을 때, 스프라이트와 카드 객체를 실체로서 다루기 위한 오브젝트
@@ -67,6 +85,8 @@ typedef struct FontTextObject {
 /// </summary>
 typedef struct CardGameObj {
 	Card* card;
+
+	int placeX, placeY;
 
 	GroupMeta* RenderLayer; //렌더링 시, 어떤 레이어에서 출력해야 하는지 저장
 
@@ -83,8 +103,13 @@ typedef struct CardGameObj {
 } CardGameObj;
 
 #pragma region GameEngineVar
-//가장 마지막 index의 RenderLayer는 UI전용으로 가정합니다
+/// <summary>
+/// 0 : GameSprite
+/// 1 : Card
+/// Last : UI
+/// </summary>
 extern GroupMeta* RenderList_Sprite[SPRITE_RENDERING_LAYERSIZE];
+//작은 텍스트를 처리하는 레이어
 extern GroupMeta* RenderList_Text;
 
 extern HDC hdc;
@@ -92,10 +117,20 @@ extern HDC renderDC; //렌더링을 위한 버퍼
 extern HBITMAP renderBmp;
 extern HDC bmpDC; //비트맵 출력을 위한 임시 캔버스
 
-extern HBRUSH GameBG;
-extern bitResource Star_crumb;
-extern bitResource Card_BG;
-extern bitResource Card_Num[2]; //0 어두운 것, 1 밝은 것
+static const int GamePalette[6][3] 
+= { {0x2a, 0x17, 0x3b}, {0x3f, 0x2c, 0x5f},
+	{0x44, 0x3f, 0x7b}, {0x4c, 0x5c, 0x87},
+	{0x69, 0x80, 0x9e}, {0x95, 0xc5, 0xac} }; //투명 제외한 게임 컬러 팔레트
+
+extern HBRUSH BlankPlane;
+extern bitResource rSpFonts[2];
+extern bitResource rStar_crumb;
+extern bitResource rCard_BG;
+extern bitResource rCard_Num[2]; //0 어두운 것, 1 밝은 것
+extern bitResource rLisette;
+extern bitResource rDali;
+extern bitResource rCardPointer;
+extern bitResource rTipBox;
 
 extern void(*Key_Z)(int); //(키 이벤트)
 extern void(*Key_X)(int); //(키 이벤트)
@@ -106,10 +141,15 @@ extern void(*Key_Vertical)(int, int); //(키 이벤트, 방향)
 //스프라이트 확대 수준
 extern int Scale;
 extern int offsetX, offsetY;
+extern int CameraX, CameraY;
+
+extern double frameTime;
+extern double frameRate;
 #pragma endregion
 
 #pragma region CardGameVar
 typedef enum {
+	Game_Quit = 0,
 	Game_Logo = 1,
 	Game_Idle = 201, //인게임 기본 상태
 	Game_StackUp, // 카드를 들어올린 상태
@@ -126,6 +166,7 @@ extern int Pointing_Hand;
 extern int Picked_Pile;
 #pragma endregion
 
+void Game_MainLoop();
 
 /// <summary>
 /// 스프라이트 리소스와 HDC, 렌더링 LIST 같은 전역 변수를 초기화 합니다
@@ -135,12 +176,36 @@ void Unload_bitResource();
 
 void Input_KeyPress(); //windows.h 같은 외부 헤더와 겹치지 않기 위한 똥꼬쇼
 
+
+extern SpTextObj* Score_Text;
+extern SpTextObj* LeftDeck_Text;
+extern SpriteObj* Lisette_Sprite;
+extern SpriteObj* Dali_Sprite;
+extern SpriteObj* CardPointer_Sprite;
+
+void Start_InGame();
+
+void OnTurnStart();
+void OnTurnEnd(int isFlee);
+
+void Init_InGameUI();
+void Update_InGameUI();
+void Free_InGameUI();
+
+void TipBox_Show(char* _content);
+void TipBox_Hide();
+
+void Warning_Show(char* content);
+
 //TODO 인게임의 상태 변경 함수들이 진정으로 외부에 노출될 필요가 있나?? 나중에 Static으로 바꾸자
 //TODO 메인메뉴 - 인게임 같은 씬 변경정도는 되어야 외부 노출을 해야지!!
 //TOdO 아 시발 함수 선언 순서에 따라 정의 없음 에러가 뜨니까 지금까지 이렇게 적었던거구나
+
 /// <summary>
-/// 게임 상황을 Idle 상태로 바꿉니다
+/// Anim의 OnEnd를 기다리기 위한 상태 - 아무 조작도 할 수 없습니다
 /// </summary>
+void StateGo_Wait();
+
 void StateGo_Idle();
 
 void StateGo_StackUp();
@@ -161,6 +226,8 @@ void ConfirmTurnEnd(int event);
 /// <param name="event">key input event</param>
 /// <param name="direc">key direction -1 or 1</param>
 void SelectHands(int event, int direc);
+
+void CardPointer_Hide();
 
 /// <summary>
 /// 선택된 손패에 대해 StackUp 상태 전환을 시도함
@@ -231,17 +298,36 @@ void SpriteObj_Free(SpriteObj* sprite);
 /// </summary>
 void SpriteObj_Print(SpriteObj* sprite);
 
-/// <summary>
-/// 폰트를 사용하여 문자를 출력하는 오브젝트를 생성함
-/// </summary>
-/// <param name="content">문자열</param>
-/// <param name="_align">문자 정렬 스타일</param>
-/// <param name="_color">팔레트 색상 번호</param>
-/// <param name="_size">문자 크기 배율</param>
-/// <returns></returns>
-FontTextObj* FontTextObj_Instantiate(char* _content, int _x, int _y, int _align, int _color, int _size);
+void SpriteObj_Print_wScale(SpriteObj* sprite, int _scale);
 
-void FontTextObj_Print(FontTextObj* text);
+SpriteObj* SpriteObj_Instantiate(const bitResource* resource, int index, int x, int y);
+
+/// <summary>
+/// SpriteRender Layer에 사용할 수 있는 SpriteObj들로 구성된 글자를 생성합니다
+/// </summary>
+/// <param name="lineCount">[out] 이 글이 몇 줄인지 반환함</param>
+/// /// <param name="_maxcharLength">[out] 이 글의 최대 가로 길이를 픽셀 단위로 반환함</param>
+SpriteObj* SpriteObj_CreateText(char* _content, int x, int y, int* _lineCount, int* _maxlineLength, int color);
+
+/// <summary>
+/// SpriteObj로 만들어진 텍스트를 효율적으로 수정합니다
+/// ! SpTextObj의 경우 전용 수정 함수를 사용하시오
+/// </summary>
+/// <param name="lineCount">[out] 이 글이 몇 줄인지 반환함</param>
+/// /// <param name="_maxcharLength">[out] 이 글의 최대 가로 길이를 픽셀 단위로 반환함</param>
+void SpriteObj_EditText(SpriteObj* spText, char* _content, int* _lineCount, int* _maxlineLength, int color);
+
+/// <summary>
+/// 고유한 렌더링 레이어에서 출력되는 SpriteObj들로 구성된 글자를 생성합니다
+/// </summary>
+/// <param name="_Scale">텍스트 크기</param>
+SpTextObj* SpTextObj_Create(char* _content, int _Scale, int x, int y, SpTextAlign _align, int color);
+
+void SpTextObj_Edit(SpTextObj* spText, char* _new_content);
+
+void SpTextObj_Print(SpTextObj* spText);
+
+void SpTextObj_Free(SpTextObj* spText);
 
 /// <summary>
 /// 스프라이트를 할당하고, 초기화 함
