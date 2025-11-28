@@ -11,16 +11,16 @@
       "RelativeMoniker": "D:0:0:{AA40AFDA-296E-4994-B829-37841EA84A70}|AltBlackJack.vcxproj|solutionrelative:GameSys.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{AA40AFDA-296E-4994-B829-37841EA84A70}|AltBlackJack.vcxproj|C:\\Users\\Caochi\\Documents\\GitHub\\Alt-Blackjack-Game\\AltBlackJack\\gameScheduler.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{AA40AFDA-296E-4994-B829-37841EA84A70}|AltBlackJack.vcxproj|solutionrelative:gameScheduler.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{AA40AFDA-296E-4994-B829-37841EA84A70}|AltBlackJack.vcxproj|C:\\Users\\Caochi\\Documents\\GitHub\\Alt-Blackjack-Game\\AltBlackJack\\main.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{AA40AFDA-296E-4994-B829-37841EA84A70}|AltBlackJack.vcxproj|solutionrelative:main.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{AA40AFDA-296E-4994-B829-37841EA84A70}|AltBlackJack.vcxproj|C:\\Users\\Caochi\\Documents\\GitHub\\Alt-Blackjack-Game\\AltBlackJack\\gameScheduler.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{AA40AFDA-296E-4994-B829-37841EA84A70}|AltBlackJack.vcxproj|solutionrelative:gameScheduler.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{AA40AFDA-296E-4994-B829-37841EA84A70}|AltBlackJack.vcxproj|C:\\Users\\Caochi\\Documents\\GitHub\\Alt-Blackjack-Game\\AltBlackJack\\gameScheduler.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{AA40AFDA-296E-4994-B829-37841EA84A70}|AltBlackJack.vcxproj|solutionrelative:gameScheduler.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -48,7 +48,7 @@
               "RelativeDocumentMoniker": "GameSys.h",
               "ToolTip": "C:\\Users\\Caochi\\Documents\\GitHub\\Alt-Blackjack-Game\\AltBlackJack\\GameSys.h",
               "RelativeToolTip": "GameSys.h",
-              "ViewState": "AgIAAMwAAAAAAAAAAAAAABAAAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAAJAAAAAAAAAAAAAAALAAAAA6AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2025-11-05T11:27:45.353Z",
               "EditorCaption": ""
@@ -61,46 +61,49 @@
               "RelativeDocumentMoniker": "GameSys.c",
               "ToolTip": "C:\\Users\\Caochi\\Documents\\GitHub\\Alt-Blackjack-Game\\AltBlackJack\\GameSys.c",
               "RelativeToolTip": "GameSys.c",
-              "ViewState": "AgIAAFQEAAAAAAAAAAAAAG0EAAAtAAAAAAAAAA==",
+              "ViewState": "AgIAAMwCAAAAAAAAAAAAAOwCAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
               "WhenOpened": "2025-11-10T07:42:13.469Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "gameScheduler.h",
               "DocumentMoniker": "C:\\Users\\Caochi\\Documents\\GitHub\\Alt-Blackjack-Game\\AltBlackJack\\gameScheduler.h",
               "RelativeDocumentMoniker": "gameScheduler.h",
               "ToolTip": "C:\\Users\\Caochi\\Documents\\GitHub\\Alt-Blackjack-Game\\AltBlackJack\\gameScheduler.h",
               "RelativeToolTip": "gameScheduler.h",
-              "ViewState": "AgIAACsAAAAAAAAAAADwv0EAAAAdAAAAAAAAAA==",
+              "ViewState": "AgIAABUAAAAAAAAAAAAYwDUAAAASAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-11-19T14:21:10.506Z"
+              "WhenOpened": "2025-11-19T14:21:10.506Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 2,
               "Title": "gameScheduler.c",
               "DocumentMoniker": "C:\\Users\\Caochi\\Documents\\GitHub\\Alt-Blackjack-Game\\AltBlackJack\\gameScheduler.c",
               "RelativeDocumentMoniker": "gameScheduler.c",
               "ToolTip": "C:\\Users\\Caochi\\Documents\\GitHub\\Alt-Blackjack-Game\\AltBlackJack\\gameScheduler.c",
               "RelativeToolTip": "gameScheduler.c",
-              "ViewState": "AgIAAGIAAAAAAAAAAAApwG8AAAArAAAAAAAAAA==",
+              "ViewState": "AgIAABgAAAAAAAAAAAAjwDcAAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
-              "WhenOpened": "2025-11-19T15:00:42.998Z"
+              "WhenOpened": "2025-11-19T15:00:42.998Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "main.c",
               "DocumentMoniker": "C:\\Users\\Caochi\\Documents\\GitHub\\Alt-Blackjack-Game\\AltBlackJack\\main.c",
               "RelativeDocumentMoniker": "main.c",
               "ToolTip": "C:\\Users\\Caochi\\Documents\\GitHub\\Alt-Blackjack-Game\\AltBlackJack\\main.c",
               "RelativeToolTip": "main.c",
-              "ViewState": "AgIAAAIAAAAAAAAAAAAlwCMAAACMAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACoAAAAcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
-              "WhenOpened": "2025-11-05T10:28:08.657Z"
+              "WhenOpened": "2025-11-05T10:28:08.657Z",
+              "EditorCaption": ""
             }
           ]
         }

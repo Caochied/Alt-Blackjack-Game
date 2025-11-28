@@ -36,11 +36,11 @@ int main() {
 	Group_Add(RenderList_Text, SpTextObj_Create("Z - Confirm / Stackup\nX - Cancel\nUp - DrawCards / Down - TurnEnd\nLeft/Right - Select Hands"
 		, 2, 6, 6, SpText_UpperLeft, 0), SpTextObj_class);
 	
-	Start_InGame();
+	SceneGo_InGame();
+
 	Game_MainLoop();
 
 	//리스트, 카드 등 객체들 알아서 해제해야 한다
-	Free_AnimStream();
 	Free_InGameUI();
 	Group_FreeAll(Deck);
 	//렌더링과 리소스 객체 해제

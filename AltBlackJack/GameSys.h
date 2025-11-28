@@ -176,14 +176,9 @@ void Unload_bitResource();
 
 void Input_KeyPress(); //windows.h 같은 외부 헤더와 겹치지 않기 위한 똥꼬쇼
 
-
-extern SpTextObj* Score_Text;
-extern SpTextObj* LeftDeck_Text;
-extern SpriteObj* Lisette_Sprite;
-extern SpriteObj* Dali_Sprite;
-extern SpriteObj* CardPointer_Sprite;
-
-void Start_InGame();
+void SceneGo_InGame();
+void SceneOut_InGame();
+void Start_Game();
 
 void OnTurnStart();
 void OnTurnEnd(int isFlee);
@@ -204,7 +199,7 @@ void Warning_Show(char* content);
 /// <summary>
 /// Anim의 OnEnd를 기다리기 위한 상태 - 아무 조작도 할 수 없습니다
 /// </summary>
-void StateGo_Wait();
+void StateGo_Wait(); 
 
 void StateGo_Idle();
 

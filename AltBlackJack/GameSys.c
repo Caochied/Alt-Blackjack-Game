@@ -43,8 +43,7 @@ int offsetX = 8, offsetY = 32;
 int CameraX = 0, CameraY = 0;
 
 double deltaTime = 0; //실제 코드의 elasped clock
-double frameTime = 0; double frameRate = (1.0 / 120.0) / CLOCKS_PER_SEC;
-int animTime = 0; int animRate = 5; //스프라이트 교체에 대한 연산은 - 24프레임
+double animTime = 0; double animRate = (1.0 / 24.0); //스프라이트 교체에 대한 연산은 - 24프레임
 
 GameState SceneState = Game_Idle;
 
@@ -67,71 +66,64 @@ void Game_MainLoop() {
 		start_time = clock();
 		if (SceneState == Game_Quit) break;
 
-		if (frameTime > frameRate) { // ! 프레임별 연산
-			if (animTime >= animRate) { // ! 스프라이트 애니메이션 24fps
-				SpriteAnim* loop;
-				loop = SpriteAnim_Stream->front;
-
-				while (loop != NULL) {
-					SpriteAnim* next = (SpriteAnim*)loop->groupProp.next;
-					SpriteAnim_Update(loop);
-					loop = next;
-				}
-				animTime = 0;
-			}
-			else animTime += (int)(frameTime*animRate / frameRate); //통상적으론 1이지만, 프레임이 낮아져 60프레임이 되면, 2씩 오른다. 그외에 프레임이 낮을때 문제가 있겠지만 귀찮으니...
-
-			IntAnim* loop;
-			loop = IntAnim_Stream->front;
+		if (animTime >= animRate) { // ! 스프라이트 애니메이션 24fps
+			SpriteAnim* loop;
+			loop = SpriteAnim_Stream->front;
 
 			while (loop != NULL) {
-				IntAnim* next = (IntAnim*)loop->groupProp.next;
-				IntAnim_Update(loop, frameTime);
+				SpriteAnim* next = (SpriteAnim*)loop->groupProp.next;
+				SpriteAnim_Update(loop);
 				loop = next;
 			}
-
-			//그래픽 루프 전, 게임오브젝트 업데이트
-			for (int i = 0; i < 4; i++) {
-				CardGameObj_Update(&Hands[i]);
-			}
-
-			RECT rc = { 0, 0, 960, 512 };
-			FillRect(renderDC, &rc, BlankPlane);
-
-			RECT horizontal_line = { 0, 255, 960, 257};
-			RECT vertical_line = { 479, 0, 481, 512 };
-			FillRect(renderDC, &horizontal_line, TestLine);
-			FillRect(renderDC, &vertical_line, TestLine);
-
-			SpriteObj* listLoop;
-			for (int i = 0; i < SPRITE_RENDERING_LAYERSIZE; i++) {
-				listLoop = (SpriteObj*)RenderList_Sprite[i]->front;
-				while (listLoop != NULL) {
-					SpriteObj_Print(listLoop);
-					listLoop = (SpriteObj*)listLoop->groupProp.next;
-				}
-			}
-
-			SpTextObj* listLoop_t = (SpTextObj*)RenderList_Text->front;
-			while (listLoop_t != NULL) {
-				SpTextObj_Print(listLoop_t);
-				listLoop_t = (SpTextObj*)listLoop_t->groupProp.next;
-			}
-
-			//버퍼에 담긴 결과 출력
-			BitBlt(hdc, offsetX, offsetY, 960, 512, renderDC, 0, 0, SRCCOPY);
-
-			// ! 키입력 받기
-			Input_KeyPress();
-
-			frameTime = 0; // ! 프레임 초기화
-			//printf("\b\b\b\b\b\b\b\b\b\b\b\bfps : %.2lf", CLOCKS_PER_SEC / deltaTime);
+			animTime = 0;
 		}
+		IntAnim* loop;
+		loop = IntAnim_Stream->front;
+
+		while (loop != NULL) {
+			IntAnim* next = (IntAnim*)loop->groupProp.next;
+			IntAnim_Update(loop, deltaTime);
+			loop = next;
+		}
+
+		//그래픽 루프 전, 게임오브젝트 업데이트
+		for (int i = 0; i < 4; i++) {
+			CardGameObj_Update(&Hands[i]);
+		}
+
+		RECT rc = { 0, 0, 960, 512 };
+		FillRect(renderDC, &rc, BlankPlane);
+
+		RECT horizontal_line = { 0, 255, 960, 257 };
+		RECT vertical_line = { 479, 0, 481, 512 };
+		FillRect(renderDC, &horizontal_line, TestLine);
+		FillRect(renderDC, &vertical_line, TestLine);
+
+		SpriteObj* listLoop;
+		for (int i = 0; i < SPRITE_RENDERING_LAYERSIZE; i++) {
+			listLoop = (SpriteObj*)RenderList_Sprite[i]->front;
+			while (listLoop != NULL) {
+				SpriteObj_Print(listLoop);
+				listLoop = (SpriteObj*)listLoop->groupProp.next;
+			}
+		}
+
+		SpTextObj* listLoop_t = (SpTextObj*)RenderList_Text->front;
+		while (listLoop_t != NULL) {
+			SpTextObj_Print(listLoop_t);
+			listLoop_t = (SpTextObj*)listLoop_t->groupProp.next;
+		}
+
+		//버퍼에 담긴 결과 출력
+		BitBlt(hdc, offsetX, offsetY, 960, 512, renderDC, 0, 0, SRCCOPY);
+
+		// ! 키입력 받기
+		Input_KeyPress();
 
 		end_time = clock();
 
 		deltaTime = (double)(end_time - start_time) / CLOCKS_PER_SEC;
-		frameTime += deltaTime;
+		animTime += deltaTime;
 	}
 }
 
@@ -148,25 +140,6 @@ void Load_bitResource()
 	renderDC = CreateCompatibleDC(hdc);
 	renderBmp = CreateCompatibleBitmap(hdc, 960, 512);
 	bmpDC = CreateCompatibleDC(hdc);
-
-	/*
-	* 폰트 설정 너무 어려워ㅜ
-	// ! 리소스에서 폰트 로드
-	HRSRC hRes = FindResource(NULL, MAKEINTRESOURCE(IDR_FONT1), RT_FONT);
-	HGLOBAL hFontData = LoadResource(NULL, hRes);
-	void* pFontData = LockResource(hFontData);
-	DWORD fontSize = SizeofResource(NULL, hRes);
-
-	// ! OS에 임시로 폰트 등록
-	DWORD nFonts;
-	renderFontRes = AddFontMemResourceEx(pFontData, fontSize, NULL, &nFonts);
-
-	// ! Font 변수 생성
-	LOGFONT lf = { 0 };
-	lf.lfHeight = 18; //폰트 크기
-	lstrcpy(lf.lfFaceName, TEXT("LanaPixel")); // 리소스 폰트 이름
-	HFONT hFont = CreateFontIndirect(&lf);
-	*/
 
 	BlankPlane = CreateSolidBrush(RGB(GamePalette[0][0], GamePalette[0][1], GamePalette[0][2]));
 	TestLine = CreateSolidBrush(RGB(GamePalette[1][0], GamePalette[1][1], GamePalette[1][2]));
@@ -254,6 +227,8 @@ void Unload_bitResource()
 		Group_FreeAll(RenderList_Sprite[i]);
 	}
 	Group_FreeAll(RenderList_Text);
+
+	Free_AnimStream();
 
 	//기존 변수 복구
 	SelectObject(bmpDC, old_bmp);
@@ -404,7 +379,7 @@ SpriteObj* Lisette_Sprite;
 SpriteObj* Dali_Sprite;
 SpriteObj* CardPointer_Sprite;
 
-void Start_InGame()
+void SceneGo_InGame()
 {
 	for (int i = 0; i < 4; i++) { //구조체 초기화 작업
 		CardGameObj_Initialize(&Hands[i], 0, 42 + i * (rCard_BG.width + 4), 91);
@@ -435,7 +410,22 @@ void Start_InGame()
 	Discarded_Goal = Deck->count;
 
 	Init_InGameUI();
-	Init_AnimStream();
+	StateGo_Wait();
+	float anim_d = 2.0f;
+	int from = 128; //화면 밑에서 올라오는 모션 만드려함
+	Group_Add(IntAnim_Stream, IntAnim_Create(&Score_Text->y, anim_d, Anim_EASE_OUT, 83 + from, 83, NULL, "start_anim"), IntAnim_class);
+	Group_Add(IntAnim_Stream, IntAnim_Create(&LeftDeck_Text->y, anim_d, Anim_EASE_OUT, 83 + from, 83, NULL, "start_anim"), IntAnim_class);
+	Group_Add(IntAnim_Stream, IntAnim_Create(&HP_Text->y, anim_d, Anim_EASE_OUT, 83 + from, 83, NULL, "start_anim"), IntAnim_class);
+	Group_Add(IntAnim_Stream, IntAnim_Create(&DMG_Text->y, anim_d, Anim_EASE_OUT, 76 + from, 76, NULL, "start_anim"), IntAnim_class);
+	Group_Add(IntAnim_Stream, IntAnim_Create(&Lisette_Sprite->y, anim_d, Anim_EASE_OUT, from, 0, NULL, "start_anim"), IntAnim_class);
+	Group_Add(IntAnim_Stream, IntAnim_Create(&Dali_Sprite->y, anim_d, Anim_EASE_OUT, from, 0, Start_Game, "start_anim"), IntAnim_class);
+}
+
+void SceneOut_InGame() {
+	Free_InGameUI();
+}
+
+void Start_Game() {
 	OnTurnStart();
 }
 
@@ -476,7 +466,7 @@ void OnTurnEnd(int isFlee) {
 	Update_InGameUI();
 
 	//! 게임 오버 조건
-	if (Discarded_Goal < 0) {
+	if (Discarded_Goal <= 0) {
 		Discarded_Goal = 0;
 		StateGo_Wait();
 		TipBox_Show("You Win - survived attacks");
@@ -490,19 +480,22 @@ void OnTurnEnd(int isFlee) {
 
 void Init_InGameUI() {
 	TipBox_BG = SpriteObj_Instantiate(&rTipBox, 0, 0, 128);
-	TipBox_Text = SpTextObj_Create("00", 3, 120, 0, SpText_UpperMiddle, 1);
+	TipBox_Text = SpTextObj_Create(" ", 3, 120, 0, SpText_UpperMiddle, 1);
 
 	Warning_BG = SpriteObj_Instantiate(&rTipBox, 1, 0, 56);
-	Warning_Text = SpTextObj_Create("00", 4, 120, 60, SpText_UpperMiddle, 1);
+	Warning_Text = SpTextObj_Create(" ", 4, 120, 60, SpText_UpperMiddle, 1);
 
-	Score_Text = SpTextObj_Create("00 - 00", 3, 120, 83, SpText_LowerMiddle, 0);
-	LeftDeck_Text = SpTextObj_Create("Deck 00", 3, 80, 83, SpText_LowerRight, 0);
-	HP_Text = SpTextObj_Create("HP 10", 3, 160, 83, SpText_LowerLeft, 0);
-	DMG_Text = SpTextObj_Create("-00", 2, 161, 76, SpText_LowerLeft, 0);
+	CardPointer_Sprite = SpriteObj_Instantiate(&rCardPointer, 0, 0, 0);
+
+	//! 이 UI는 게임 씬 전환할 때, 애니메이션이 있음
+	Score_Text = SpTextObj_Create(" ", 3, 120, 83, SpText_LowerMiddle, 0);
+	LeftDeck_Text = SpTextObj_Create(" ", 3, 80, 83, SpText_LowerRight, 0);
+	HP_Text = SpTextObj_Create(" ", 3, 160, 83, SpText_LowerLeft, 0);
+	DMG_Text = SpTextObj_Create(" ", 2, 161, 76, SpText_LowerLeft, 0);
 
 	Lisette_Sprite = SpriteObj_Instantiate(&rLisette, 0, -34, 0);
 	Dali_Sprite = SpriteObj_Instantiate(&rDali, 0, 173, 0);
-	CardPointer_Sprite = SpriteObj_Instantiate(&rCardPointer, 0, 0, 0);
+	// ! ##################
 
 	Group_Add(RenderList_Text, Score_Text, SpTextObj_class);
 	Group_Add(RenderList_Text, LeftDeck_Text, SpTextObj_class);
@@ -717,8 +710,6 @@ void StateGo_Wait()
 	Key_X = NULL;
 	Key_Horizontal = NULL;
 	Key_Vertical = NULL;
-
-	Update_InGameUI();
 }
 
 void StateGo_Idle()
@@ -744,6 +735,8 @@ void StateGo_StackUp()
 	Key_Horizontal = SelectHands;
 	Key_Vertical = NULL; //TODO 여기에 카드 전체 펼치기 기능을 넣는건?
 
+	Anim_InstanceCut("draw_anim");
+
 	Picked_Pile = Pointing_Hand;
 	Hands[Picked_Pile].placeY -= 8;
 
@@ -755,7 +748,7 @@ void StateGo_StackUp()
 static void StateOut_StackUp()
 {
 	Hands[Picked_Pile].placeY += 8;
-	Picked_Pile = -1;
+//	Picked_Pile = -1;
 }
 
 void StateGo_Draw() {
@@ -831,6 +824,7 @@ void Try_CardDraw(int event) {
 	for (int i = 0; i < HANDS_MAX; i++) {
 		if (Hands[i].card == NULL) {
 			index = i;
+			Group_Add(IntAnim_Stream, IntAnim_Create(&Hands[i].placeY, 0.18f, Anim_EASE_OUT, 111, 91, NULL, "draw_anim"), IntAnim_class);
 			break;
 		}
 	}
@@ -865,6 +859,7 @@ void SelectHands(int event, int direc) {
 		if (Hands[Pointing_Hand].card != NULL)
 		{
 			Group_Add(RenderList_Sprite[1], CardPointer_Sprite, SpriteObj_class);
+			Anim_InstanceCut("draw_anim");
 			CardPointer_Sprite->x = Hands[Pointing_Hand].rootCard_bg->x-1;
 			CardPointer_Sprite->y = Hands[Pointing_Hand].rootCard_bg->y - 5;
 			return;
