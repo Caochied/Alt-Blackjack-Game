@@ -18,30 +18,6 @@
 		-> 리스트에 보관되면 객체임
 */
 
-// ! 키 입력 체계 테스트 함수
-void MoveStar(int event, int direc) {
-	static SpriteObj* star = NULL;
-	if (star == NULL) {
-		star = SpriteObj_Instantiate(&rStar_crumb, 0, 8, 8); // ! 렌더링 큐에 포함되면, 프로그램 종료시, 자동으로 메모리 해제됨
-		//애니메이터 생성해서 추가해주기
-
-		Group_Add(RenderList_Sprite[1], star, SpriteObj_class);
-	}
-
-	if (event != 1) return; //KeyDown 에만 반응
-
-	star->sprite_index = (star->sprite_index + 1) % 2;
-
-	if (direc == 1) //Right
-	{
-		star->x += 10;
-	}
-	else if (direc == -1) //Left
-	{
-		star->x += -10;
-	}
-}
-
 int main() {
 	Load_bitResource();
 
@@ -56,7 +32,7 @@ int main() {
 	srand(time(NULL)); //시드 초기화
 
 	// TODO 테스트 코드 실행 제거
-	Group_Add(RenderList_Text, SpTextObj_Create("Alt BlackJack week 4", 2, 120, 9, SpText_LowerMiddle, 0), SpTextObj_class);
+	Group_Add(RenderList_Text, SpTextObj_Create("Alt BlackJack week 5", 2, 120, 9, SpText_LowerMiddle, 0), SpTextObj_class);
 	Group_Add(RenderList_Text, SpTextObj_Create("Z - Confirm / Stackup\nX - Cancel\nUp - DrawCards / Down - TurnEnd\nLeft/Right - Select Hands"
 		, 2, 6, 6, SpText_UpperLeft, 0), SpTextObj_class);
 	

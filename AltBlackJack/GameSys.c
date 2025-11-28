@@ -399,6 +399,7 @@ SpTextObj* Warning_Text;
 SpTextObj* Score_Text;
 SpTextObj* LeftDeck_Text;
 SpTextObj* HP_Text;
+SpTextObj* DMG_Text;
 SpriteObj* Lisette_Sprite;
 SpriteObj* Dali_Sprite;
 SpriteObj* CardPointer_Sprite;
@@ -497,6 +498,8 @@ void Init_InGameUI() {
 	Score_Text = SpTextObj_Create("00 - 00", 3, 120, 83, SpText_LowerMiddle, 0);
 	LeftDeck_Text = SpTextObj_Create("Deck 00", 3, 80, 83, SpText_LowerRight, 0);
 	HP_Text = SpTextObj_Create("HP 10", 3, 160, 83, SpText_LowerLeft, 0);
+	DMG_Text = SpTextObj_Create("-00", 2, 161, 76, SpText_LowerLeft, 0);
+
 	Lisette_Sprite = SpriteObj_Instantiate(&rLisette, 0, -34, 0);
 	Dali_Sprite = SpriteObj_Instantiate(&rDali, 0, 173, 0);
 	CardPointer_Sprite = SpriteObj_Instantiate(&rCardPointer, 0, 0, 0);
@@ -518,12 +521,23 @@ void Update_InGameUI() {
 
 	sprintf_s(temp_str, 16, "HP %d", Player_HP);
 	SpTextObj_Edit(HP_Text, temp_str);
+
+	if (Hands_GetDMG() > 0)
+	{
+		if(Hands_isBursted() == 0) sprintf_s(temp_str, 16, "-%d", Hands_GetDMG());
+		else sprintf_s(temp_str, 16, "-%d (BURST -5)", Hands_GetDMG());
+		SpTextObj_Edit(DMG_Text, temp_str);
+
+		Group_Add(RenderList_Text, DMG_Text, SpTextObj_class);
+	}
+	else Group_Exclude(&DMG_Text->groupProp);
 }
 void Free_InGameUI() {
 	Group_Exclude(&TipBox_Text->groupProp);
 	Group_Exclude(&Score_Text->groupProp);
 	Group_Exclude(&LeftDeck_Text->groupProp);
 	Group_Exclude(&HP_Text->groupProp);
+	Group_Exclude(&DMG_Text->groupProp);
 	Group_Exclude(&Lisette_Sprite->groupProp);
 	Group_Exclude(&Dali_Sprite->groupProp);
 	Group_Exclude(&CardPointer_Sprite->groupProp);
@@ -535,6 +549,7 @@ void Free_InGameUI() {
 	SpTextObj_Free(Score_Text);
 	SpTextObj_Free(LeftDeck_Text);
 	SpTextObj_Free(HP_Text);
+	SpTextObj_Free(DMG_Text);
 	SpriteObj_Free(Lisette_Sprite);
 	SpriteObj_Free(Dali_Sprite);
 	SpriteObj_Free(CardPointer_Sprite);
@@ -805,7 +820,7 @@ void Try_CardStack(int event) {
 		return;
 	}
 	else {
-		//TODO 경고 피드백 띄우기
+		Warning_Show("Incorrect card stacking");
 	}
 }
 
@@ -821,7 +836,6 @@ void Try_CardDraw(int event) {
 	}
 
 	if (index == -1) {
-		//TODO 경고 피드백
 		Warning_Show("Hands are full");
 		return;
 	}
@@ -833,8 +847,7 @@ void Try_CardDraw(int event) {
 			Discarded = temp;
 		}
 		else {
-
-			//TODO 경고 피드백
+			Warning_Show("Deck is empty");
 			return;
 		}
 	}
@@ -919,6 +932,7 @@ int Hands_GetScore(int aceIsOne) {
 	for (int i = 0; i < HANDS_MAX; i++) {
 		if (Hands[i].card == NULL) continue;
 		temp = Card_getUpper(Hands[i].card);
+
 		if (temp->value == 1 && aceIsOne == 0) sum += 11;
 		else if(temp->value >= 10) sum += 10;
 		else sum += temp->value;
