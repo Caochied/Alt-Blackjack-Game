@@ -3,7 +3,7 @@
 #include <windows.h>
 #include <time.h>
 
-#define SPRITE_RENDERING_LAYERSIZE 3
+#define SPRITE_RENDERING_LAYERSIZE 4
 #define SP_FONT_COUNT 95
 #define SP_FONT_LINEHEIGHT 9
 
@@ -104,8 +104,9 @@ typedef struct CardGameObj {
 
 #pragma region GameEngineVar
 /// <summary>
-/// 0 : GameSprite
-/// 1 : Card
+/// 0 : BG
+/// 1 : GameSprite
+/// 2 : Card
 /// Last : UI
 /// </summary>
 extern GroupMeta* RenderList_Sprite[SPRITE_RENDERING_LAYERSIZE];
@@ -131,6 +132,8 @@ extern bitResource rLisette;
 extern bitResource rDali;
 extern bitResource rCardPointer;
 extern bitResource rTipBox;
+extern bitResource rGameBG_Glow;
+extern bitResource rEnemy;
 
 extern void(*Key_Z)(int); //(키 이벤트)
 extern void(*Key_X)(int); //(키 이벤트)
@@ -178,6 +181,8 @@ void Input_KeyPress(); //windows.h 같은 외부 헤더와 겹치지 않기 위한 똥꼬쇼
 
 void SceneGo_InGame();
 void SceneOut_InGame();
+
+void RestartGame();
 void Start_Game();
 
 void OnTurnStart();
@@ -191,6 +196,14 @@ void TipBox_Show(char* _content);
 void TipBox_Hide();
 
 void Warning_Show(char* content);
+
+void Shake_Camera_forPerfect();
+
+//고정값의 카메라 흔들림을 제공함
+void Shake_Camera(int scale);
+
+void CharAnim_Idle_Play();
+void CharAnim_Idle_Stop();
 
 //TODO 인게임의 상태 변경 함수들이 진정으로 외부에 노출될 필요가 있나?? 나중에 Static으로 바꾸자
 //TODO 메인메뉴 - 인게임 같은 씬 변경정도는 되어야 외부 노출을 해야지!!

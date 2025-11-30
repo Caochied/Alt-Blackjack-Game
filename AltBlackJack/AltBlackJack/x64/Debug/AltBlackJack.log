@@ -1,3 +1,9 @@
 ﻿  GameSys.c
-C:\Users\Caochi\Documents\GitHub\Alt-Blackjack-Game\AltBlackJack\GameSys.c(1015,16): warning C4090: '=': 다른 'const' 한정자
+C:\Users\Caochi\Documents\GitHub\Alt-Blackjack-Game\AltBlackJack\GameSys.c(504,9): warning C4113: 'void (__cdecl *)()'은(는) 'void (__cdecl *)(int)'과(와) 매개 변수 목록이 다릅니다.
+C:\Users\Caochi\Documents\GitHub\Alt-Blackjack-Game\AltBlackJack\GameSys.c(809,20): warning C4244: '=': 'double'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\Caochi\Documents\GitHub\Alt-Blackjack-Game\AltBlackJack\GameSys.c(810,20): warning C4244: '=': 'double'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\Caochi\Documents\GitHub\Alt-Blackjack-Game\AltBlackJack\GameSys.c(1171,16): warning C4090: '=': 다른 'const' 한정자
+  gameScheduler.c
+C:\Users\Caochi\Documents\GitHub\Alt-Blackjack-Game\AltBlackJack\gameScheduler.c(57,19): warning C4244: '+=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  코드를 생성하고 있습니다...
   AltBlackJack.vcxproj -> C:\Users\Caochi\Documents\GitHub\Alt-Blackjack-Game\AltBlackJack\x64\Debug\AltBlackJack.exe

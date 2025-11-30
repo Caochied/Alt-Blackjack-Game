@@ -126,10 +126,13 @@ void Group_ClearAll(GroupMeta* group) {
 		switch (group->valueType) {
 		case Card_class:
 			Card_Free((Card*)temp);
+			break;
 		case SpriteObj_class:
 			SpriteObj_Free((SpriteObj*)temp);
+			break;
 		case SpTextObj_class:
 			SpTextObj_Free((SpTextObj*)temp);
+			break;
 		default:
 			free(temp);
 		}

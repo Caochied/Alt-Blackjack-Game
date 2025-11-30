@@ -32,7 +32,7 @@ int main() {
 	srand(time(NULL)); //시드 초기화
 
 	// TODO 테스트 코드 실행 제거
-	Group_Add(RenderList_Text, SpTextObj_Create("Alt BlackJack week 5", 2, 120, 9, SpText_LowerMiddle, 0), SpTextObj_class);
+	Group_Add(RenderList_Text, SpTextObj_Create("Alt BlackJack week final", 2, 120, 9, SpText_LowerMiddle, 0), SpTextObj_class);
 	Group_Add(RenderList_Text, SpTextObj_Create("Z - Confirm / Stackup\nX - Cancel\nUp - DrawCards / Down - TurnEnd\nLeft/Right - Select Hands"
 		, 2, 6, 6, SpText_UpperLeft, 0), SpTextObj_class);
 	

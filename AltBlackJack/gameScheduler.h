@@ -37,6 +37,7 @@ typedef struct SpriteAnimator {
 	int* tgtVar;
 
 	int cur_frame;
+	short loop; //0이 아니면, Anim_InstanceCut으로 종료되기 전까지 반복합니다
 
 	/// <summary>
 	/// tgtVar를 24프레임 마다 변경함
@@ -63,14 +64,15 @@ IntAnim* IntAnim_Create(int* tgtVar, float duration, AnimType style, int startVa
 
 void IntAnim_Update(IntAnim* anim, double deltatime);
 
-SpriteAnim* SpriteAnim_Create(int* spriteIndex, int animFrame[], int animlength, void (*onEnd), char* cutTag);
+SpriteAnim* SpriteAnim_Create(int* spriteIndex, int animFrame[], int animlength, void (*onEnd), char* cutTag, short loop);
 
 void SpriteAnim_Update(SpriteAnim* anim);
 
 /// <summary>
 /// 모든 애니메이션 종류의 스트림에서,
 /// 해당 tag를 가진 애니메이터들을 즉시 종료합니다
+/// 종료된 애니메이터가 존재하면 0이 아닌 값을 반환합니다
 /// </summary>
-void Anim_InstanceCut(char* tag);
+int Anim_InstanceCut(char* tag);
 // ! Anim 포인터를 변수로 저장하고 있으면, 자동으로 메모리 해제되는 특성으로 인해
 // ! 메모리 오류가 발생하기 때문에, 간접적으로 제거하는 구문을 제공함

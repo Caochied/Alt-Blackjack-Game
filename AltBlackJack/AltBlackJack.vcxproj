@@ -106,6 +106,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <StackReserveSize>
+      </StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -145,6 +147,8 @@
     <Image Include="Sprite Source\Card_num_1.bmp" />
     <Image Include="Sprite Source\Card_Pointer.bmp" />
     <Image Include="Sprite Source\Dali.bmp" />
+    <Image Include="Sprite Source\Enemy.bmp" />
+    <Image Include="Sprite Source\Game_BGGlow.bmp" />
     <Image Include="Sprite Source\Lisette.bmp" />
     <Image Include="Sprite Source\star_crumb.bmp" />
     <Image Include="Sprite Source\TipBox.bmp" />

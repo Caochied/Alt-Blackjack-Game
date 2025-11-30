@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
+#define PI 3.141592653589793
 
 GroupMeta* RenderList_Sprite[SPRITE_RENDERING_LAYERSIZE];
 GroupMeta* RenderList_Text;
@@ -29,6 +31,8 @@ bitResource rLisette;
 bitResource rDali;
 bitResource rCardPointer;
 bitResource rTipBox;
+bitResource rGameBG_Glow;
+bitResource rEnemy;
 
 void(*Key_Z)(int) = NULL;
 void(*Key_X)(int) = NULL;
@@ -57,6 +61,7 @@ int Pointing_Hand; //방향키로 포인팅된 카드
 int Picked_Pile = -1; //스택 기능을 사용할 때, 들어올려진 카드
 static int Selected_Option; //선택지 지정 상황에서 사용되는 변수
 static short visible_TipBox = 0;
+static short char_idle_animPlaying = 0;
 
 void Game_MainLoop() {
 	clock_t end_time;
@@ -202,11 +207,11 @@ void Load_bitResource()
 
 	rLisette.Hbitmap = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP6));
 	GetObject(rLisette.Hbitmap, sizeof(BITMAP), &rLisette.bmp);
-	rLisette.spriteCount = 4; rLisette.row = 1; rLisette.width = 96; rLisette.height = 128;
+	rLisette.spriteCount = 10; rLisette.row = 2; rLisette.width = 96; rLisette.height = 128;
 
 	rDali.Hbitmap = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP5));
 	GetObject(rDali.Hbitmap, sizeof(BITMAP), &rDali.bmp);
-	rDali.spriteCount = 7; rDali.row = 1; rDali.width = 96; rDali.height = 128;
+	rDali.spriteCount = 16; rDali.row = 2; rDali.width = 112; rDali.height = 128;
 
 	rCardPointer.Hbitmap = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP8));
 	GetObject(rCardPointer.Hbitmap, sizeof(BITMAP), &rCardPointer.bmp);
@@ -215,6 +220,14 @@ void Load_bitResource()
 	rTipBox.Hbitmap = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP10));
 	GetObject(rTipBox.Hbitmap, sizeof(BITMAP), &rTipBox.bmp);
 	rTipBox.spriteCount = 2; rTipBox.row = 2; rTipBox.width = 240; rTipBox.height = 16;
+
+	rGameBG_Glow.Hbitmap = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP12));
+	GetObject(rGameBG_Glow.Hbitmap, sizeof(BITMAP), &rGameBG_Glow.bmp);
+	rGameBG_Glow.spriteCount = 1; rGameBG_Glow.row = 1; rGameBG_Glow.width = 240; rGameBG_Glow.height = 58;
+
+	rEnemy.Hbitmap = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP11));
+	GetObject(rEnemy.Hbitmap, sizeof(BITMAP), &rEnemy.bmp);
+	rEnemy.spriteCount = 1; rEnemy.row = 1; rEnemy.width = 80; rEnemy.height = 80;
 
 	old_bmp = (HBITMAP)SelectObject(bmpDC, rCard_BG.Hbitmap); //기존 변수 저장
 	old_render = (HBITMAP)SelectObject(renderDC, renderBmp);
@@ -253,6 +266,8 @@ void Unload_bitResource()
 	DeleteObject(rDali.Hbitmap);
 	DeleteObject(rCardPointer.Hbitmap);
 	DeleteObject(rTipBox.Hbitmap);
+	DeleteObject(rGameBG_Glow.Hbitmap);
+	DeleteObject(rEnemy.Hbitmap);
 }
 
 void Input_KeyPress()
@@ -379,6 +394,9 @@ SpriteObj* Lisette_Sprite;
 SpriteObj* Dali_Sprite;
 SpriteObj* CardPointer_Sprite;
 
+SpriteObj* Enemy_Sprite;
+SpriteObj* GameBG_Glow;
+
 void SceneGo_InGame()
 {
 	for (int i = 0; i < 4; i++) { //구조체 초기화 작업
@@ -413,16 +431,23 @@ void SceneGo_InGame()
 	StateGo_Wait();
 	float anim_d = 2.0f;
 	int from = 128; //화면 밑에서 올라오는 모션 만드려함
-	Group_Add(IntAnim_Stream, IntAnim_Create(&Score_Text->y, anim_d, Anim_EASE_OUT, 83 + from, 83, NULL, "start_anim"), IntAnim_class);
-	Group_Add(IntAnim_Stream, IntAnim_Create(&LeftDeck_Text->y, anim_d, Anim_EASE_OUT, 83 + from, 83, NULL, "start_anim"), IntAnim_class);
-	Group_Add(IntAnim_Stream, IntAnim_Create(&HP_Text->y, anim_d, Anim_EASE_OUT, 83 + from, 83, NULL, "start_anim"), IntAnim_class);
-	Group_Add(IntAnim_Stream, IntAnim_Create(&DMG_Text->y, anim_d, Anim_EASE_OUT, 76 + from, 76, NULL, "start_anim"), IntAnim_class);
-	Group_Add(IntAnim_Stream, IntAnim_Create(&Lisette_Sprite->y, anim_d, Anim_EASE_OUT, from, 0, NULL, "start_anim"), IntAnim_class);
+
 	Group_Add(IntAnim_Stream, IntAnim_Create(&Dali_Sprite->y, anim_d, Anim_EASE_OUT, from, 0, Start_Game, "start_anim"), IntAnim_class);
+	Group_Add(IntAnim_Stream, IntAnim_Create(&Lisette_Sprite->y, anim_d, Anim_EASE_OUT, from, 0, NULL, "start_anim"), IntAnim_class);
+	Group_Add(IntAnim_Stream, IntAnim_Create(&Enemy_Sprite->y, anim_d, Anim_EASE_OUT, -from, 2, NULL, "start_anim"), IntAnim_class);
+	Group_Add(IntAnim_Stream, IntAnim_Create(&GameBG_Glow->y, anim_d, Anim_EASE_OUT, -from, 0, NULL, "start_anim"), IntAnim_class);
 }
 
 void SceneOut_InGame() {
 	Free_InGameUI();
+	Group_FreeAll(Deck);
+	Group_FreeAll(Discarded);
+}
+
+void RestartGame()
+{
+	SceneOut_InGame();
+	SceneGo_InGame();
 }
 
 void Start_Game() {
@@ -438,8 +463,14 @@ void OnTurnStart() {
 }
 
 void OnTurnEnd(int isFlee) {
+	CharAnim_Idle_Stop();
+	StateGo_Wait();
+
+	int dmg = 0;
+
 	if (isFlee == 0) {
-		Player_HP -= Hands_GetDMG();
+		dmg = Hands_GetDMG();
+		Player_HP -= dmg;
 	}
 
 	//! 손패 해제 및 정리 작업
@@ -463,17 +494,60 @@ void OnTurnEnd(int isFlee) {
 		}
 	}
 
-	Update_InGameUI();
-
 	//! 게임 오버 조건
 	if (Discarded_Goal <= 0) {
 		Discarded_Goal = 0;
-		StateGo_Wait();
 		TipBox_Show("You Win - survived attacks");
 	}
 	else if (Player_HP <= 0) {
-		StateGo_Wait();
-		TipBox_Show("You Lost");
+		TipBox_Show("You Lost - Restart to Z");
+		Key_Z = RestartGame;
+
+		Shake_Camera(dmg);
+		Lisette_Sprite->sprite_index = 8;
+		Dali_Sprite->sprite_index = 11;
+		Group_Exclude(&Score_Text->groupProp);
+		Group_Exclude(&LeftDeck_Text->groupProp);
+		Group_Exclude(&HP_Text->groupProp);
+		Group_Exclude(&DMG_Text->groupProp);
+	}
+	else if(isFlee == 0) {
+		if (dmg > 0) {
+			int dali_hit[14];
+			int lisette_hit[14];
+			int index;
+
+			if (Player_HP <= 5) index = 11;
+			else index = 10;
+
+			for (int i = 0; i < 14; i++) {
+				dali_hit[i] = index;
+				lisette_hit[i] = 8;
+			}
+			Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&Lisette_Sprite->sprite_index, lisette_hit, 14, NULL, "char_endanim", 0), SpriteAnim_class);
+			Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&Dali_Sprite->sprite_index, dali_hit, 14, OnTurnStart, "char_endanim", 0), SpriteAnim_class);
+			Shake_Camera(dmg);
+		}
+		else { //perfect
+			int dali_perfect[14];
+			int lisette_perfect[14];
+			int temp = 0, temparr[4] = { 0 };
+
+			for (int i = 0; i < 7; i++) {
+				dali_perfect[i*2] = dali_perfect[i * 2 + 1] = i+2;
+
+				if (i < 3) {
+					lisette_perfect[i*2] = lisette_perfect[i * 2 + 1] = i+2;
+				}
+				else {
+					lisette_perfect[i*2] = 6;
+					lisette_perfect[i*2 + 1] = 6;
+				}
+			}
+			Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&temp, temparr, 4, Shake_Camera_forPerfect, "char_endanim", 0), SpriteAnim_class); //타이머용으로 생성한 애니메이션
+			Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&Lisette_Sprite->sprite_index, lisette_perfect, 14, NULL, "char_endanim", 0), SpriteAnim_class);
+			Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&Dali_Sprite->sprite_index, dali_perfect, 14, OnTurnStart, "char_endanim", 0), SpriteAnim_class);
+		}
 	}
 	else OnTurnStart();
 }
@@ -488,24 +562,29 @@ void Init_InGameUI() {
 	CardPointer_Sprite = SpriteObj_Instantiate(&rCardPointer, 0, 0, 0);
 
 	//! 이 UI는 게임 씬 전환할 때, 애니메이션이 있음
+	GameBG_Glow = SpriteObj_Instantiate(&rGameBG_Glow, 0, 0, 0);
+	
 	Score_Text = SpTextObj_Create(" ", 3, 120, 83, SpText_LowerMiddle, 0);
 	LeftDeck_Text = SpTextObj_Create(" ", 3, 80, 83, SpText_LowerRight, 0);
 	HP_Text = SpTextObj_Create(" ", 3, 160, 83, SpText_LowerLeft, 0);
 	DMG_Text = SpTextObj_Create(" ", 2, 161, 76, SpText_LowerLeft, 0);
 
 	Lisette_Sprite = SpriteObj_Instantiate(&rLisette, 0, -34, 0);
-	Dali_Sprite = SpriteObj_Instantiate(&rDali, 0, 173, 0);
+	Dali_Sprite = SpriteObj_Instantiate(&rDali, 0, 157, 0);
+	Enemy_Sprite = SpriteObj_Instantiate(&rEnemy, 0, 80, 2);
 	// ! ##################
 
 	Group_Add(RenderList_Text, Score_Text, SpTextObj_class);
 	Group_Add(RenderList_Text, LeftDeck_Text, SpTextObj_class);
 	Group_Add(RenderList_Text, HP_Text, SpTextObj_class);
-	Group_Add(RenderList_Sprite[0], Lisette_Sprite, SpriteObj_class);
-	Group_Add(RenderList_Sprite[0], Dali_Sprite, SpriteObj_class);
+	Group_Add(RenderList_Sprite[0], GameBG_Glow, SpriteObj_class);
+	Group_Add(RenderList_Sprite[1], Enemy_Sprite, SpriteObj_class);
+	Group_Add(RenderList_Sprite[1], Lisette_Sprite, SpriteObj_class);
+	Group_Add(RenderList_Sprite[1], Dali_Sprite, SpriteObj_class);
 	//sGroup_Add(RenderList_Sprite[1], CardPointer_Sprite, SpriteObj_class);
 }
 void Update_InGameUI() {
-	char temp_str[16];
+	char temp_str[16] = { 0 };
 	sprintf_s(temp_str, 16, "%d - %d", Hands_GetScore(1), Hands_GetScore(0));
 	SpTextObj_Edit(Score_Text, temp_str);
 
@@ -534,6 +613,8 @@ void Free_InGameUI() {
 	Group_Exclude(&Lisette_Sprite->groupProp);
 	Group_Exclude(&Dali_Sprite->groupProp);
 	Group_Exclude(&CardPointer_Sprite->groupProp);
+	Group_Exclude(&GameBG_Glow->groupProp);
+	Group_Exclude(&Enemy_Sprite->groupProp);
 
 	SpTextObj_Free(TipBox_Text);
 	SpriteObj_Free(TipBox_BG);
@@ -546,6 +627,8 @@ void Free_InGameUI() {
 	SpriteObj_Free(Lisette_Sprite);
 	SpriteObj_Free(Dali_Sprite);
 	SpriteObj_Free(CardPointer_Sprite);
+	SpriteObj_Free(GameBG_Glow);
+	SpriteObj_Free(Enemy_Sprite);
 }
 
 
@@ -698,7 +781,63 @@ void Warning_Show(char* _content) {
 		zitter[i * 2 + 1] = 2;
 	}
 
-	Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&Warning_BG->x, zitter, 120, Warning_Hide, "warning_anim"), SpriteAnim_class);
+	Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&Warning_BG->x, zitter, 120, Warning_Hide, "warning_anim", 0), SpriteAnim_class);
+}
+
+void Shake_Camera_forPerfect()
+{
+	Shake_Camera(5);
+}
+
+void Shake_Camera(int scale)
+{
+	if (scale < 3) scale = 3;
+
+	Anim_InstanceCut("cam_shake");
+	int shake_x[13] = { 0 };
+	int shake_y[13] = { 0 };
+	int max;
+
+	for (int i = 0; i < 12; i++) {
+		double direc = ((double)rand() / RAND_MAX) * PI * 2; //0 ~ 2PI
+
+		//if (i > 12) {
+			max = (int)((double)(12 - i) / 12.0 * scale);
+		//}
+		//else max = scale;
+
+		shake_x[i] = max * cos(direc);
+		shake_y[i] = max * sin(direc);
+
+		//shake_x[i] = (rand()+1) % (max + 1) * cos(direc);
+		//shake_y[i] = (rand()+1) % (max + 1) * sin(direc);
+	}
+	shake_x[12] = 0;
+	shake_y[12] = 0;
+	Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&CameraX, shake_x, 13, NULL, "cam_shake", 0), SpriteAnim_class);
+	Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&CameraY, shake_y, 13, NULL, "cam_shake", 0), SpriteAnim_class);
+}
+
+// 캐릭터의 anim transition에 대해서, 따로 설계한 FSM은 없지만,
+// idle은 간섭이 일어나면 이쁘지 않기 때문에 중복실행을 방지함
+void CharAnim_Idle_Play()
+{
+	if (char_idle_animPlaying != 0) return;
+
+	Anim_InstanceCut("char_anim");
+	int idle[24] = { 0 };
+	for (int i = 12; i < 24; i++) idle[i] = 1;
+
+	Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&Dali_Sprite->sprite_index, idle, 24, NULL, "char_anim", 1), SpriteAnim_class);
+	Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&Lisette_Sprite->sprite_index, idle, 24, NULL, "char_anim", 1), SpriteAnim_class);
+	char_idle_animPlaying = 1;
+}
+// 캐릭터 idle 애니메이션 중지시킬 때 사용함
+void CharAnim_Idle_Stop() {
+	Anim_InstanceCut("char_anim");
+	Lisette_Sprite->sprite_index = 0;
+	Dali_Sprite->sprite_index = 0;
+	char_idle_animPlaying = 0;
 }
 
 #pragma region Scene State
@@ -722,6 +861,8 @@ void StateGo_Idle()
 
 	Update_InGameUI();
 	TipBox_Hide();
+
+	CharAnim_Idle_Play();
 }
 
 void StateGo_StackUp()
@@ -770,6 +911,7 @@ void StateGo_Stand() {
 	Key_Vertical = SelectAction;
 
 	CardPointer_Hide();
+
 	Selected_Option = 0;
 	SelectTurnEnd(1, 0); //선택지 시각 효과 초기화
 }
@@ -789,14 +931,28 @@ void SelectTurnEnd(int event, int direc) {
 
 	if(FleeUsed == 0) Selected_Option = (Selected_Option + 2 + direc) % 2;
 	else Selected_Option = 0;
+
 	//여기에 선택지 시각적 효과 보이기
 	switch (Selected_Option) {
 	case 0:
 		if (FleeUsed == 0) TipBox_Show("< STAND > - FLEE");
 		else TipBox_Show("< STAND >");
+
+		if (Player_HP - Hands_GetDMG() <= 0) { //Stand 하면 죽음
+			CharAnim_Idle_Stop();
+			Lisette_Sprite->sprite_index = 9;
+			Dali_Sprite->sprite_index = 12;
+		}
+		else if (Hands_GetDMG() > 5) { //잘못된 행동에 대한 경고 : 버스트 or 6데미지 이상
+			CharAnim_Idle_Stop();
+			Lisette_Sprite->sprite_index = 7;
+			Dali_Sprite->sprite_index = 9;
+		}
+		else CharAnim_Idle_Play();
 		break;
 	case 1:
 		TipBox_Show("STAND - < FLEE >");
+		CharAnim_Idle_Play();
 		break;
 	}
 }
@@ -858,7 +1014,7 @@ void SelectHands(int event, int direc) {
 		if (SceneState == Game_StackUp && Pointing_Hand == Picked_Pile) continue; //스택 기능을 사용중일 때, 자기 자신을 선택할 수는 없음
 		if (Hands[Pointing_Hand].card != NULL)
 		{
-			Group_Add(RenderList_Sprite[1], CardPointer_Sprite, SpriteObj_class);
+			Group_Add(RenderList_Sprite[2], CardPointer_Sprite, SpriteObj_class);
 			Anim_InstanceCut("draw_anim");
 			CardPointer_Sprite->x = Hands[Pointing_Hand].rootCard_bg->x-1;
 			CardPointer_Sprite->y = Hands[Pointing_Hand].rootCard_bg->y - 5;
