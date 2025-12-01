@@ -4,5 +4,5 @@ C:\Users\minho\문서\GitHub\Alt-Blackjack-Game\AltBlackJack\GameSys.c(540,9): w
 C:\Users\minho\문서\GitHub\Alt-Blackjack-Game\AltBlackJack\GameSys.c(835,20): warning C4244: '=': 'double'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
 C:\Users\minho\문서\GitHub\Alt-Blackjack-Game\AltBlackJack\GameSys.c(836,20): warning C4244: '=': 'double'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
 C:\Users\minho\문서\GitHub\Alt-Blackjack-Game\AltBlackJack\GameSys.c(874,8): warning C4113: 'void (__cdecl *)()'은(는) 'void (__cdecl *)(int)'과(와) 매개 변수 목록이 다릅니다.
-C:\Users\minho\문서\GitHub\Alt-Blackjack-Game\AltBlackJack\GameSys.c(1206,16): warning C4090: '=': 다른 'const' 한정자
+C:\Users\minho\문서\GitHub\Alt-Blackjack-Game\AltBlackJack\GameSys.c(1238,16): warning C4090: '=': 다른 'const' 한정자
   AltBlackJack.vcxproj -> C:\Users\minho\문서\GitHub\Alt-Blackjack-Game\AltBlackJack\x64\Debug\AltBlackJack.exe

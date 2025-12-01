@@ -57,7 +57,7 @@ short FleeUsed = 0;
 GroupMeta* Deck;
 GroupMeta* Discarded;
 CardGameObj Hands[HANDS_MAX];
-int Pointing_Hand; //방향키로 포인팅된 카드
+int Pointing_Hand; //방향키로 포인팅된 카드, 음수 상태면, 포인터가 가려진 상태임
 int Picked_Pile = -1; //스택 기능을 사용할 때, 들어올려진 카드
 static int Selected_Option; //선택지 지정 상황에서 사용되는 변수
 static short visible_TipBox = 0;
@@ -409,7 +409,7 @@ void SceneGo_Lobby() {
 
 	StateGo_Lobby();
 
-	Version_Text = SpTextObj_Create("Alt BlackJack Release 251201", 2, 120, 128, SpText_LowerMiddle, 0);
+	Version_Text = SpTextObj_Create("Alt BlackJack Release 251202", 2, 120, 128, SpText_LowerMiddle, 0);
 	Title_Text = SpTextObj_Create("Ace And Jack", 8, 120, 42, SpText_UpperMiddle, 0);
 	StartTip_Text = SpTextObj_Create("* Press Z to start *", 3, 120, 84, SpText_LowerMiddle, 0);
 
@@ -605,7 +605,7 @@ void Init_InGameUI() {
 	Group_Add(RenderList_Sprite[1], Enemy_Sprite, SpriteObj_class);
 	Group_Add(RenderList_Sprite[1], Lisette_Sprite, SpriteObj_class);
 	Group_Add(RenderList_Sprite[1], Dali_Sprite, SpriteObj_class);
-	//sGroup_Add(RenderList_Sprite[1], CardPointer_Sprite, SpriteObj_class);
+	CardPointer_Hide();
 }
 void Update_InGameUI() {
 	char temp_str[16] = { 0 };
@@ -902,7 +902,7 @@ void StateGo_Idle()
 
 void StateGo_StackUp()
 {
-	if (Pointing_Hand == -1) return;
+	if (Pointing_Hand < 0) return;
 	if (Hands[Pointing_Hand].card == NULL) return;
 
 	SceneState = Game_StackUp;
@@ -995,7 +995,7 @@ void SelectTurnEnd(int event, int direc) {
 void Try_CardStack(int event) {
 	if (event != 1) return;
 
-	if (Pointing_Hand == -1) return;
+	if (Pointing_Hand < 0) return;
 	if (Hands[Picked_Pile].card == NULL) return;
 	
 	if (Card_StackUp(Hands[Pointing_Hand].card, Hands[Picked_Pile].card)) {
@@ -1010,6 +1010,19 @@ void Try_CardStack(int event) {
 
 void Try_CardDraw(int event) {
 	if (event != 1) return;
+	static short confirm_asked = 0; //카드를 더 뽑으면 안될 때 한번 더 물어봤는지 여부
+
+	if (Hands_GetDMG() == 0) {
+		if (confirm_asked == 0) {
+			TipBox_Show("\"Draw a card?\"");
+			confirm_asked = 1;
+			return;
+		}
+		else {
+			TipBox_Show("Press Z to draw a card");
+		}
+	}
+	confirm_asked = 0;
 
 	int index = -1;
 	for (int i = 0; i < HANDS_MAX; i++) {
@@ -1021,7 +1034,7 @@ void Try_CardDraw(int event) {
 	}
 
 	if (index == -1) {
-		Warning_Show("Hands are full");
+		Warning_Show("Slots are full");
 		return;
 	}
 	if (Deck->count <= 0) {
@@ -1044,6 +1057,10 @@ void Try_CardDraw(int event) {
 void SelectHands(int event, int direc) {
 	if (event != 1) return; //오직 KeyDown에만 반응
 
+	if (Pointing_Hand < 0) {
+		Pointing_Hand += HANDS_MAX - direc;
+	}
+
 	for (int i = 0; i < HANDS_MAX; i++) { //direc 방향으로 선택 가능한 카드를 찾음 (중간에 빈 구조체가 있을 수 있으니까)
 		Pointing_Hand = (Pointing_Hand + direc + HANDS_MAX) % HANDS_MAX;
 		if (SceneState == Game_StackUp && Pointing_Hand == Picked_Pile) continue; //스택 기능을 사용중일 때, 자기 자신을 선택할 수는 없음
@@ -1061,7 +1078,7 @@ void SelectHands(int event, int direc) {
 }
 
 void CardPointer_Hide() {
-	Pointing_Hand = -1;
+	if(Pointing_Hand >= 0) Pointing_Hand = Pointing_Hand - HANDS_MAX;
 	Group_Exclude(&CardPointer_Sprite->groupProp);
 }
 
@@ -1083,12 +1100,10 @@ void SelectAction(int event, int direc) {
 	if (direc == 1) // ! Up
 	{
 		StateGo_Draw();
-		//게임 모드 변경 -> Draw
 	}
 	else if (direc == -1)
 	{
 		StateGo_Stand();
-		//게임 모드 변경 -> Stand
 	}
 }
 
@@ -1112,6 +1127,9 @@ void InGame_General_Undo(int event) {
 
 #pragma region Game Score
 
+/// <summary>
+/// 이 함수는, 최대 최소에 대한 값만 접근할 수 있습니다 - 정확한 최소 피해량은 GetDMG를 사용하시오
+/// </summary>
 int Hands_GetScore(int aceIsOne) {
 	int sum = 0;
 	Card* temp;
@@ -1128,24 +1146,38 @@ int Hands_GetScore(int aceIsOne) {
 }
 
 int Hands_isBursted() {
-	int min = Hands_GetScore(0);
-	if (min > Hands_GetScore(1)) min = Hands_GetScore(1);
+	//! 만약 BURST DMG 값이 바뀌어, 오히려 BURST되는 것이 피해량이 적다면, 이 함수는 다시 설계되어야 합니다
 
-	if (min > 21) return 1;
+	if (Hands_GetScore(1) > 21) return 1;
 	else return 0;
 }
 
 int Hands_GetDMG() {
-	int min = Hands_GetScore(0);
-	if (min > 21) min = Hands_GetScore(1);
+	int aceCount = 0;
 
-	min -= 21;
+	int min = 99;
 
-	if (min <= 0) return -min;
-	else //버스트를 피할 수 없는 경우
-	{
-		return min + BURST_DMG;
+	Card* temp;
+	for (int i = 0; i < HANDS_MAX; i++) {
+		if (Hands[i].card == NULL) continue;
+		temp = Card_getUpper(Hands[i].card);
+		if (temp->value == 1) aceCount += 1;
 	}
+
+	for (int i = 0; i <= aceCount; i++) { //ace가 2개 이상 있는 경우의 최소 피해 계산
+		int dmg = Hands_GetScore(1) + i * 10;
+
+		if (dmg > 21) {
+			dmg = dmg - 21 + BURST_DMG;
+		}
+		else {
+			dmg = -dmg + 21;
+		}
+
+		if (min > dmg) min = dmg;
+	}
+
+	return min;
 }
 
 #pragma endregion
