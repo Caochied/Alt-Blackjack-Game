@@ -22,7 +22,6 @@ static HBITMAP old_render;
 static int SpFont_Sizes[SP_FONT_COUNT]; //각 글자마다의 크기
 
 HBRUSH BlankPlane;
-static HBRUSH TestLine;
 bitResource rSpFonts[2];
 bitResource rStar_crumb;
 bitResource rCard_BG;
@@ -49,7 +48,8 @@ int CameraX = 0, CameraY = 0;
 double deltaTime = 0; //실제 코드의 elasped clock
 double animTime = 0; double animRate = (1.0 / 24.0); //스프라이트 교체에 대한 연산은 - 24프레임
 
-GameState SceneState = Game_Idle;
+GameState SceneState = Game_Lobby;
+void(*SceneOut_Action)() = NULL;
 
 int Player_HP;
 int Discarded_Goal; //카드 제거 목표 갯수
@@ -91,18 +91,16 @@ void Game_MainLoop() {
 			loop = next;
 		}
 
-		//그래픽 루프 전, 게임오브젝트 업데이트
+		// ! 그래픽 루프 전, 게임오브젝트 업데이트
+		// TODO 씬에 따라서, 지속적으로 업데이트 해야할 내용이 달라질 수 있으므로
+		// TODO 함수 포인터들을 모은 동적 배열을 만든다
+		// ? Lobby Scene에서 업데이트가 진행되어, 에러가 발생했었음
 		for (int i = 0; i < 4; i++) {
 			CardGameObj_Update(&Hands[i]);
 		}
 
 		RECT rc = { 0, 0, 960, 512 };
 		FillRect(renderDC, &rc, BlankPlane);
-
-		RECT horizontal_line = { 0, 255, 960, 257 };
-		RECT vertical_line = { 479, 0, 481, 512 };
-		FillRect(renderDC, &horizontal_line, TestLine);
-		FillRect(renderDC, &vertical_line, TestLine);
 
 		SpriteObj* listLoop;
 		for (int i = 0; i < SPRITE_RENDERING_LAYERSIZE; i++) {
@@ -147,7 +145,6 @@ void Load_bitResource()
 	bmpDC = CreateCompatibleDC(hdc);
 
 	BlankPlane = CreateSolidBrush(RGB(GamePalette[0][0], GamePalette[0][1], GamePalette[0][2]));
-	TestLine = CreateSolidBrush(RGB(GamePalette[1][0], GamePalette[1][1], GamePalette[1][2]));
 
 	//테스트 리소스
 	rStar_crumb.Hbitmap = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP4));
@@ -227,7 +224,7 @@ void Load_bitResource()
 
 	rEnemy.Hbitmap = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP11));
 	GetObject(rEnemy.Hbitmap, sizeof(BITMAP), &rEnemy.bmp);
-	rEnemy.spriteCount = 1; rEnemy.row = 1; rEnemy.width = 80; rEnemy.height = 80;
+	rEnemy.spriteCount = 2; rEnemy.row = 1; rEnemy.width = 80; rEnemy.height = 80;
 
 	old_bmp = (HBITMAP)SelectObject(bmpDC, rCard_BG.Hbitmap); //기존 변수 저장
 	old_render = (HBITMAP)SelectObject(renderDC, renderBmp);
@@ -397,8 +394,44 @@ SpriteObj* CardPointer_Sprite;
 SpriteObj* Enemy_Sprite;
 SpriteObj* GameBG_Glow;
 
+static void SceneOut_TryInvoke()
+{
+	if (SceneOut_Action != NULL) SceneOut_Action();
+}
+
+SpTextObj* Version_Text;
+SpTextObj* Title_Text;
+SpTextObj* StartTip_Text;
+
+void SceneGo_Lobby() {
+	SceneOut_TryInvoke();
+	SceneOut_Action = SceneOut_Lobby;
+
+	StateGo_Lobby();
+
+	Version_Text = SpTextObj_Create("Alt BlackJack Release 251201", 2, 120, 128, SpText_LowerMiddle, 0);
+	Title_Text = SpTextObj_Create("Ace And Jack", 8, 120, 42, SpText_UpperMiddle, 0);
+	StartTip_Text = SpTextObj_Create("* Press Z to start *", 3, 120, 84, SpText_LowerMiddle, 0);
+
+	Group_Add(RenderList_Text, Version_Text, SpTextObj_class);
+	Group_Add(RenderList_Text, Title_Text, SpTextObj_class);
+	Group_Add(RenderList_Text, StartTip_Text, SpTextObj_class);
+}
+
+void SceneOut_Lobby() {
+	Group_Exclude(&Version_Text->groupProp);
+	Group_Exclude(&Title_Text->groupProp);
+	Group_Exclude(&StartTip_Text->groupProp);
+	SpTextObj_Free(Version_Text);
+	SpTextObj_Free(Title_Text);
+	SpTextObj_Free(StartTip_Text);
+}
+
 void SceneGo_InGame()
 {
+	SceneOut_TryInvoke();
+	SceneOut_Action = SceneOut_InGame;
+
 	for (int i = 0; i < 4; i++) { //구조체 초기화 작업
 		CardGameObj_Initialize(&Hands[i], 0, 42 + i * (rCard_BG.width + 4), 91);
 	}
@@ -442,12 +475,6 @@ void SceneOut_InGame() {
 	Free_InGameUI();
 	Group_FreeAll(Deck);
 	Group_FreeAll(Discarded);
-}
-
-void RestartGame()
-{
-	SceneOut_InGame();
-	SceneGo_InGame();
 }
 
 void Start_Game() {
@@ -495,17 +522,24 @@ void OnTurnEnd(int isFlee) {
 	}
 
 	//! 게임 오버 조건
-	if (Discarded_Goal <= 0) {
-		Discarded_Goal = 0;
-		TipBox_Show("You Win - survived attacks");
-	}
-	else if (Player_HP <= 0) {
+	if (Player_HP <= 0) {
 		TipBox_Show("You Lost - Restart to Z");
-		Key_Z = RestartGame;
+		Key_Z = SceneGo_InGame;
 
 		Shake_Camera(dmg);
 		Lisette_Sprite->sprite_index = 8;
 		Dali_Sprite->sprite_index = 11;
+		Group_Exclude(&Score_Text->groupProp);
+		Group_Exclude(&LeftDeck_Text->groupProp);
+		Group_Exclude(&HP_Text->groupProp);
+		Group_Exclude(&DMG_Text->groupProp);
+	}
+	else if (Discarded_Goal <= 0) {
+		Discarded_Goal = 0;
+		TipBox_Show("You Win - Restart to Z");
+		Key_Z = SceneGo_InGame;
+
+		Shake_Camera(dmg);
 		Group_Exclude(&Score_Text->groupProp);
 		Group_Exclude(&LeftDeck_Text->groupProp);
 		Group_Exclude(&HP_Text->groupProp);
@@ -529,22 +563,12 @@ void OnTurnEnd(int isFlee) {
 			Shake_Camera(dmg);
 		}
 		else { //perfect
-			int dali_perfect[14];
-			int lisette_perfect[14];
+			int dali_perfect[16] = {2,2,3,3,4,4,5,5,6,6,7,7,7,7,8,8};
+			int lisette_perfect[16] = {2,2,3,3,4,4,5,5,6,6,6,6,6,6,6,6};
 			int temp = 0, temparr[4] = { 0 };
 
-			for (int i = 0; i < 7; i++) {
-				dali_perfect[i*2] = dali_perfect[i * 2 + 1] = i+2;
-
-				if (i < 3) {
-					lisette_perfect[i*2] = lisette_perfect[i * 2 + 1] = i+2;
-				}
-				else {
-					lisette_perfect[i*2] = 6;
-					lisette_perfect[i*2 + 1] = 6;
-				}
-			}
 			Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&temp, temparr, 4, Shake_Camera_forPerfect, "char_endanim", 0), SpriteAnim_class); //타이머용으로 생성한 애니메이션
+			//TODO - 함수 지연 호출기능 추가할 것 - 빈 애니메이션으로 싱크하기는 좀;
 			Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&Lisette_Sprite->sprite_index, lisette_perfect, 14, NULL, "char_endanim", 0), SpriteAnim_class);
 			Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&Dali_Sprite->sprite_index, dali_perfect, 14, OnTurnStart, "char_endanim", 0), SpriteAnim_class);
 		}
@@ -661,6 +685,8 @@ void CardGameObj_Initialize(CardGameObj* gameobj, int renderLayer, int x, int y)
 }
 void CardGameObj_Update(CardGameObj* gameobj)
 {
+	if (gameobj->Initialized != 1) return;
+
 	if (gameobj->card == NULL) { // ! 카드가 없으면, 렌더링 큐에서 스프라이트 제거
 		Group_Exclude(&gameobj->bg->groupProp);
 		Group_Exclude(&gameobj->rootCard_bg->groupProp);
@@ -828,6 +854,7 @@ void CharAnim_Idle_Play()
 	int idle[24] = { 0 };
 	for (int i = 12; i < 24; i++) idle[i] = 1;
 
+	Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&Enemy_Sprite->sprite_index, idle, 24, NULL, "char_anim", 1), SpriteAnim_class);
 	Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&Dali_Sprite->sprite_index, idle, 24, NULL, "char_anim", 1), SpriteAnim_class);
 	Group_Add(SpriteAnim_Stream, SpriteAnim_Create(&Lisette_Sprite->sprite_index, idle, 24, NULL, "char_anim", 1), SpriteAnim_class);
 	char_idle_animPlaying = 1;
@@ -841,6 +868,14 @@ void CharAnim_Idle_Stop() {
 }
 
 #pragma region Scene State
+
+void StateGo_Lobby() {
+	SceneState = Game_Lobby;
+	Key_Z = SceneGo_InGame;
+	Key_X = NULL;
+	Key_Horizontal = NULL;
+	Key_Vertical = NULL;
+}
 
 void StateGo_Wait()
 {

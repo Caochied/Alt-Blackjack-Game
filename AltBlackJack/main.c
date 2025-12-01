@@ -21,7 +21,7 @@
 int main() {
 	Load_bitResource();
 
-	system("title BlackJack Game"); //콘솔창 정보 수정
+	system("title Ace and Jack : The 21 Rummy Game"); //콘솔창 정보 수정
 	system("mode con:cols=120 lines=32"); //960,512 offset(+8,+32) [240, 128]
 
 	CONSOLE_CURSOR_INFO cursor = { 0, }; //커서 가리기
@@ -30,13 +30,8 @@ int main() {
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursor);
 
 	srand(time(NULL)); //시드 초기화
-
-	// TODO 테스트 코드 실행 제거
-	Group_Add(RenderList_Text, SpTextObj_Create("Alt BlackJack week final", 2, 120, 9, SpText_LowerMiddle, 0), SpTextObj_class);
-	Group_Add(RenderList_Text, SpTextObj_Create("Z - Confirm / Stackup\nX - Cancel\nUp - DrawCards / Down - TurnEnd\nLeft/Right - Select Hands"
-		, 2, 6, 6, SpText_UpperLeft, 0), SpTextObj_class);
 	
-	SceneGo_InGame();
+	SceneGo_Lobby();
 
 	Game_MainLoop();
 

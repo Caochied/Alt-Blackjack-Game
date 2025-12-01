@@ -153,7 +153,7 @@ extern double frameRate;
 #pragma region CardGameVar
 typedef enum {
 	Game_Quit = 0,
-	Game_Logo = 1,
+	Game_Lobby = 1,
 	Game_Idle = 201, //인게임 기본 상태
 	Game_StackUp, // 카드를 들어올린 상태
 	Game_Draw, // 방향키 위를 눌러, 카드를 뽑을지 선택하는 상태
@@ -162,6 +162,7 @@ typedef enum {
 } GameState;
 
 extern GameState SceneState;
+extern void(*SceneOut_Action)(); //현재 씬에서 다른 씬으로 transition하기 위해 호출해야 할 뒷정리 함수
 
 extern GroupMeta* Deck;
 extern CardGameObj Hands[HANDS_MAX];
@@ -178,6 +179,9 @@ void Load_bitResource();
 void Unload_bitResource();
 
 void Input_KeyPress(); //windows.h 같은 외부 헤더와 겹치지 않기 위한 똥꼬쇼
+
+void SceneGo_Lobby();
+void SceneOut_Lobby();
 
 void SceneGo_InGame();
 void SceneOut_InGame();
@@ -208,6 +212,8 @@ void CharAnim_Idle_Stop();
 //TODO 인게임의 상태 변경 함수들이 진정으로 외부에 노출될 필요가 있나?? 나중에 Static으로 바꾸자
 //TODO 메인메뉴 - 인게임 같은 씬 변경정도는 되어야 외부 노출을 해야지!!
 //TOdO 아 시발 함수 선언 순서에 따라 정의 없음 에러가 뜨니까 지금까지 이렇게 적었던거구나
+
+void StateGo_Lobby();
 
 /// <summary>
 /// Anim의 OnEnd를 기다리기 위한 상태 - 아무 조작도 할 수 없습니다
